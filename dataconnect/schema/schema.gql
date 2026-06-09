@@ -1,0 +1,40 @@
+type User @table {
+  email: String!
+  createdAt: Timestamp!
+  displayName: String
+  avatarUrl: String
+}
+
+type Folder @table {
+  name: String!
+  owner: User!
+  parentFolder: Folder
+}
+
+type File @table {
+  name: String!
+  storagePath: String!
+  sizeBytes: Int64!
+  owner: User!
+  parentFolder: Folder
+  mimeType: String
+  description: String
+}
+
+type Share @table {
+  permissionLevel: String!
+  user: User!
+  # targetId is represented by the polymorphic associations below
+  # Note: One of these must be populated per share instance
+  targetFile: File
+  targetFolder: Folder
+}
+
+type ActivityLog @table {
+  user: User!
+  actionType: String!
+  timestamp: Timestamp!
+  # targetId is represented by the polymorphic association below
+  targetFile: File
+  targetFolder: Folder
+}

@@ -1,0 +1,20 @@
+mutation CreateUserAccount($email: String!, $displayName: String!) @auth(level: PUBLIC) {
+  user_insert(data: {email: $email, displayName: $displayName, createdAt_expr: "request.time"})
+}
+
+mutation CreateFolder($name: String!, $ownerId: UUID!, $parentFolderId: UUID) @auth(level: USER) {
+  folder_insert(data: {name: $name, ownerId: $ownerId, parentFolderId: $parentFolderId})
+}
+
+query ListUserFiles($ownerId: UUID!) @auth(level: USER) {
+  files(where: {ownerId: {eq: $ownerId}}) {
+    id
+    name
+    sizeBytes
+    mimeType
+  }
+}
+
+mutation LogUserAction($userId: UUID!, $actionType: String!, $targetFileId: UUID) @auth(level: USER) {
+  activityLog_insert(data: {userId: $userId, actionType: $actionType, targetFileId: $targetFileId, timestamp_expr: "request.time"})
+}

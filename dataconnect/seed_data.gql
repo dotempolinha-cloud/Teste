@@ -1,0 +1,33 @@
+mutation SeedData @transaction {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      email: "alice@example.com",
+      createdAt: "2023-01-01T00:00:00Z",
+      displayName: "Alice"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      email: "bob@example.com",
+      createdAt: "2023-01-02T00:00:00Z",
+      displayName: "Bob"
+    }
+  ])
+  folder_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      name: "Documents",
+      owner: {id: "550e8400-e29b-41d4-a716-446655440001"}
+    }
+  ])
+  file_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      name: "report.pdf",
+      storagePath: "/users/alice/report.pdf",
+      sizeBytes: 1024,
+      owner: {id: "550e8400-e29b-41d4-a716-446655440001"},
+      parentFolder: {id: "660e8400-e29b-41d4-a716-446655440001"}
+    }
+  ])
+}

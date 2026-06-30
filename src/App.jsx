@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import {
   LayoutDashboard, Car, Users, MapPin, Fuel, Wrench, DollarSign,
-  FileText, Bell, Settings, LogOut, Search, Plus, Edit, Download,
+  FileText, Bell, Settings as SettingsIcon, LogOut, Search, Plus, Edit, Download,
   CheckCircle, AlertCircle, AlertTriangle, Truck, X, Check,
   Activity, Shield, User, Calendar, BarChart2, ClipboardList,
   Building2, CheckSquare, AlertOctagon, Moon, Sun, Trash2,
@@ -129,7 +129,7 @@ const NAV_ITEMS=[
   {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"checklist",lb:"Checklist",ic:CheckSquare}]},
   {sec:"RECURSOS",items:[{id:"fuel",lb:"Abastecimento",ic:Fuel},{id:"maintenance",lb:"Manutenção",ic:Wrench},{id:"fines",lb:"Multas",ic:AlertOctagon}]},
   {sec:"GESTÃO",items:[{id:"financial",lb:"Financeiro",ic:DollarSign},{id:"reports",lb:"Relatórios",ic:FileText},{id:"suppliers",lb:"Fornecedores",ic:Building2}]},
-  {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:Settings}]},
+  {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:SettingsIcon}]},
 ];
 const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",checklist:"Checklist Diário",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
 

@@ -2,14 +2,14 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDGHcJnG8djTUZGNVYieoGCAWPjxGbPPU8",
-  authDomain: "armazenamento-fa018.firebaseapp.com",
-  projectId: "armazenamento-fa018",
-  storageBucket: "armazenamento-fa018.firebasestorage.app",
-  messagingSenderId: "841315789028",
-  appId: "1:841315789028:web:ec6dee9e831af9e92064f1",
-  measurementId: "G-88XL8W7Q6J"
-}; 
+  apiKey: "AIzaSyBjeLKkCPhSTMP7u4xEE-Wt6J6KqcKYfbU",
+  authDomain: "sga-upanema.firebaseapp.com",
+  projectId: "sga-upanema",
+  storageBucket: "sga-upanema.firebasestorage.app",
+  messagingSenderId: "706064247719",
+  appId: "1:706064247719:web:b798154ea80b62d983a482",
+  measurementId: "G-CCPERFVNPV"
+};
 
 const app = initializeApp(firebaseConfig);
 

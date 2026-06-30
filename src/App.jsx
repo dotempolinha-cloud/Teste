@@ -2,6 +2,8 @@
     Prefeitura de Upanema — RN  |  Versão de Produção
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
+import { db } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -103,8 +105,34 @@ html,body{width:100%;min-height:100vh;overflow-x:hidden;}
 
 /* ═══ STORAGE (troca por Firebase Firestore quando pronto) ═══ */
 const Store = {
-  async get(k){try{const r=await window.storage?.get(k);return r?JSON.parse(r.value):null;}catch{return null;}},
-  async set(k,v){try{await window.storage?.set(k,JSON.stringify(v));}catch{}},
+async get(key) {
+  try {
+    const ref = doc(db, "storage", key);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      return null;
+    }
+
+    return snap.data().value;
+  } catch (e) {
+    console.error("Erro ao carregar", key, e);
+    return null;
+  }
+},
+
+async set(key, value) {
+  try {
+    const ref = doc(db, "storage", key);
+
+    await setDoc(ref, {
+      value: value,
+      updatedAt: new Date()
+    });
+  } catch (e) {
+    console.error("Erro ao salvar", key, e);
+  }
+},
 };
 
 const NAV_BG="#0c1a47", P="#1d4ed8";

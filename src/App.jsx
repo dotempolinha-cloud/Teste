@@ -1201,6 +1201,7 @@ export default function App(){
   const[suppliers,setSuppliers]=useState([]);
   const[log,setLog]=useState([]);
   const[sysUsers,setSysUsers]=useState(SYS_USERS_INIT);
+  const[vistorias,setVistorias]=useState([]);
 
   /* Carrega dados persistidos */
   useEffect(()=>{

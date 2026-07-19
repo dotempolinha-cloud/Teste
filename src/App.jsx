@@ -1233,6 +1233,7 @@ if(vs)setVistorias(vs);
   useEffect(()=>{if(ready)Store.set("sga_su",suppliers);},[suppliers,ready]);
   useEffect(()=>{if(ready)Store.set("sga_log",log);},[log,ready]);
   useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
 
   const goPage=p=>{setPage(p);setSideOpen(false);setNotif(false);};
 

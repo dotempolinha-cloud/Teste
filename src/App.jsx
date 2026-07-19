@@ -154,7 +154,7 @@ const ROLE_LABELS={admin:"Administrador",gestor:"Gestor da Garagem",secretario:"
 
 const NAV_ITEMS=[
   {sec:null,items:[{id:"dashboard",lb:"Painel Geral",ic:LayoutDashboard}]},
-  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"checklist",lb:"Checklist",ic:CheckSquare}]},
+  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"checklist",lb:"Vistoria",ic:CheckSquare}]},
   {sec:"RECURSOS",items:[{id:"fuel",lb:"Abastecimento",ic:Fuel},{id:"maintenance",lb:"Manutenção",ic:Wrench},{id:"fines",lb:"Multas",ic:AlertOctagon}]},
   {sec:"GESTÃO",items:[{id:"financial",lb:"Financeiro",ic:DollarSign},{id:"reports",lb:"Relatórios",ic:FileText},{id:"suppliers",lb:"Fornecedores",ic:Building2}]},
   {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:SettingsIcon}]},

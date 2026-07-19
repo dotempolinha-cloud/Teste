@@ -159,7 +159,7 @@ const NAV_ITEMS=[
   {sec:"GESTÃO",items:[{id:"financial",lb:"Financeiro",ic:DollarSign},{id:"reports",lb:"Relatórios",ic:FileText},{id:"suppliers",lb:"Fornecedores",ic:Building2}]},
   {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:SettingsIcon}]},
 ];
-const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",checklist:"Checklist Diário",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
+const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",checklist:"Vistoria Veicular",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
 
 /* ═══ TOAST ═══ */
 function useToast(){const[ts,setTs]=useState([]);const add=(m,t="success")=>{const id=Date.now()+Math.random();setTs(p=>[...p,{id,m,t}]);setTimeout(()=>setTs(p=>p.filter(x=>x.id!==id)),4200);};return{ts,add};}

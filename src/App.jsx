@@ -1207,15 +1207,16 @@ export default function App(){
   useEffect(()=>{
     (async()=>{
       try{
-        const[v,d,t,f,m,fi,al,su,lg,us]=await Promise.all([
-          Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
-          Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
-          Store.get("sga_log"),Store.get("sga_users"),
-        ]);
-        if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
-        if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
-        if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
-        if(us&&us.length)setSysUsers(us);
+        const[v,d,t,f,m,fi,al,su,lg,us,vs]=await Promise.all([
+  Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
+  Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
+  Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),
+]);
+if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
+if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
+if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
+if(us&&us.length)setSysUsers(us);
+if(vs)setVistorias(vs);
       }catch{}
       setReady(true);
     })();

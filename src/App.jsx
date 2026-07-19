@@ -491,7 +491,7 @@ function Vehicles({vehicles,setVehicles,toast}){
       ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><Car size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhum veículo cadastrado</div><div style={{fontSize:13}}>Clique em "+ Cadastrar Veículo" para começar.</div></div>
       :<div className="tbl" style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead><tr><Th ch=""/><Th ch="Placa"/><Th ch="Veículo"/><Th ch="Secretaria"/><Th ch="KM"/><Th ch="Comb."/><Th ch="Revisão"/><Th ch="Status"/><Th ch=""/></tr></thead>
+          <thead><tr><Th ch=""/><Th ch="Placa"/><Th ch="Veículo"/><Th ch="Secretaria"/><Th ch="KM"/><Th ch="Comb."/><Th ch="Conservação"/><Th ch="Status"/><Th ch=""/></tr></thead>
           <tbody>{filt.map((v,i)=><tr key={v.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td ch={<div style={{width:42,height:32,background:v.foto?`url(${v.foto})`:"var(--ra)",backgroundSize:"cover",backgroundPosition:"center",border:"1px solid var(--bd)",display:"flex",alignItems:"center",justifyContent:"center"}}>{!v.foto&&<Car size={14} color="var(--mu)"/>}</div>}/>
             <Td ch={<span style={{fontWeight:700,color:NAV_BG,letterSpacing:".04em"}}>{v.placa}</span>}/>
@@ -499,7 +499,7 @@ function Vehicles({vehicles,setVehicles,toast}){
             <Td ch={<div><div style={{fontSize:12}}>{v.sec}</div><div style={{fontSize:10,color:"var(--mu)"}}>{v.pat}</div></div>}/>
             <Td ch={<span style={{fontWeight:500,whiteSpace:"nowrap"}}>{v.km>0?v.km.toLocaleString("pt-BR")+" km":"Horímetro"}</span>}/>
             <Td ch={<Prog v={v.niv}/>}/>
-            <Td ch={<span style={{fontSize:12,whiteSpace:"nowrap"}}>{v.rev||"—"}</span>}/>
+            <Td ch={<Bdg lb={v.estadoCons||"—"} tp={v.estadoCons==="Ótimo"||v.estadoCons==="Bom"?"ok":v.estadoCons==="Regular"?"warn":v.estadoCons==="Ruim"||v.estadoCons==="Péssimo"?"bad":"gray"}/>}/>
             <Td ch={<SBdg v={v.sit}/>}/>
             <Td ch={<div style={{display:"flex",gap:4}}>
               <button onClick={()=>setSel(v)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button>
@@ -937,57 +937,130 @@ function Fines({vehicles,fines,setFines,toast}){
   </div>;
 }
 
-/* ═══ CHECKLIST ═══ */
-function Checklist({vehicles,drivers,toast}){
-  const ITEMS=["Nível de óleo motor","Água do radiador / arrefecimento","Nível de combustível","Calibração dos pneus (incl. estepe)","Estado dos pneus (desgaste e danos)","Freios — pedal firme e fluido no nível","Luzes dianteiras (faróis e luzinhas)","Luzes traseiras (freio, ré e seta)","Limpadores de para-brisa e reservatório","Espelhos retrovisores (regulados e limpos)","Cinto de segurança do motorista","CRLV e documentos obrigatórios","Kit de emergência completo","Extintor de incêndio (prazo e carga)","Lataria e vidros (avarias visíveis)"];
-  const[placa,setPlaca]=useState("");const[mot,setMot]=useState("");const[ck,setCk]=useState({});const[obs,setObs]=useState("");
-  const[hist,setHist]=useState([]);
+
+/* ═══ VISTORIA VEICULAR ═══ */
+function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
+  const ITENS_MECANICA=[
+    "Nível de óleo motor","Água do radiador / arrefecimento","Nível de combustível",
+    "Calibração dos pneus (incl. estepe)","Estado dos pneus (desgaste e danos)",
+    "Freios — pedal firme e fluido no nível","Sistema de direção (folgas e ruídos)",
+    "Suspensão (amortecedores e buchas)","Correia dentada / alternador",
+  ];
+  const ITENS_ELETRICA=[
+    "Luzes dianteiras (faróis e luzinhas)","Luzes traseiras (freio, ré e seta)",
+    "Sinaleiros / pisca-alerta","Limpadores de para-brisa e reservatório",
+    "Buzina","Ar-condicionado / aquecedor","Instrumentos do painel",
+  ];
+  const ITENS_SEGURANCA=[
+    "Cinto de segurança (todos os lugares)","CRLV e documentos obrigatórios",
+    "Kit de emergência completo (triângulo, macaco, chave)","Extintor de incêndio (prazo e carga)",
+    "Espelhos retrovisores (regulados e limpos)","Lataria e vidros (avarias visíveis)",
+    "Portas e travas funcionando","Para-choques sem danos",
+  ];
+  const TODOS=[...ITENS_MECANICA,...ITENS_ELETRICA,...ITENS_SEGURANCA];
+
+  const[placa,setPlaca]=useState("");
+  const[mot,setMot]=useState("");
+  const[ck,setCk]=useState({});
+  const[obs,setObs]=useState("");
+  const[km,setKm]=useState("");
+  const[estadoCons,setEstadoCons]=useState("Bom");
+  const[foto,setFoto]=useState(null);
+  const[sel,setSel]=useState(null);
   const totalOk=Object.values(ck).filter(Boolean).length;
+
   const enviar=()=>{
     if(!placa||!mot){toast("Selecione o veículo e o motorista.","danger");return;}
     const ok=Object.values(ck).filter(Boolean).length;
-    const res=ok===ITEMS.length?"Aprovado":ok>=12?"Aprovado c/ ressalvas":"Reprovado";
-    const id=`CKL-${Date.now().toString().slice(-8)}`;
-    setHist([{id,placa,mot,data:new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),ok,total:ITEMS.length,res},...hist]);
-    setCk({});setObs("");setPlaca("");setMot("");
-    toast(ok===ITEMS.length?"✓ Checklist aprovado! Veículo liberado para saída.":"⚠ Checklist com ressalvas — verifique itens pendentes.","info");
+    const itensMarcados=Object.entries(ck).filter(([,v])=>v).map(([k])=>k);
+    const itensFaltando=TODOS.filter(i=>!ck[i]);
+    const res=ok===TODOS.length?"Aprovado":ok>=Math.floor(TODOS.length*0.8)?"Aprovado c/ ressalvas":"Reprovado";
+    const id=`VST-${Date.now().toString().slice(-8)}`;
+    const nova={
+      id,placa,mot,
+      data:new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),
+      ok,total:TODOS.length,res,obs,km:+km||0,estadoCons,foto,
+      itensMarcados,itensFaltando,
+    };
+    setVistorias(p=>[nova,...p]);
+    // Atualiza estado de conservação no veículo automaticamente
+    setVehicles(p=>p.map(v=>v.placa===placa?{...v,estadoCons,km:+km||v.km}:v));
+    setCk({});setObs("");setPlaca("");setMot("");setKm("");setEstadoCons("Bom");setFoto(null);
+    toast(res==="Aprovado"?"✓ Vistoria aprovada! Veículo liberado.":res==="Aprovado c/ ressalvas"?"⚠ Vistoria com ressalvas — verifique itens.":"❌ Vistoria reprovada — veículo não liberado.","info");
   };
+
+  const corEstado={Ótimo:"#16a34a",Bom:"#0284c7",Regular:"#d97706",Ruim:"#dc2626",Péssimo:"#7f1d1d"};
+
+  const SecaoItens=({titulo,itens})=><div style={{marginBottom:14}}>
+    <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:6,paddingBottom:5,borderBottom:"1px solid var(--bd)"}}>{titulo}</p>
+    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+      {itens.map((item,i)=><div key={i} onClick={()=>setCk(p=>({...p,[item]:!p[item]}))} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",background:ck[item]?"#dcfce7":"var(--ra)",cursor:"pointer",border:`1px solid ${ck[item]?"#86efac":"var(--bd)"}`,transition:"all .12s"}}>
+        <div style={{width:17,height:17,border:`2px solid ${ck[item]?"#16a34a":"var(--bd)"}`,background:ck[item]?"#16a34a":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ck[item]&&<Check size={10} color="white"/>}</div>
+        <span style={{fontSize:13,color:ck[item]?"#15803d":"var(--sub)",fontWeight:ck[item]?600:400}}>{item}</span>
+      </div>)}
+    </div>
+  </div>;
+
   return<div>
-    <SH title="Checklist Diário de Inspeção" sub="Inspeção pré-saída obrigatória para todos os veículos da frota"/>
+    <SH title="Vistoria Veicular" sub={`${vistorias.length} vistoria(s) registrada(s)`}/>
     <div className="g2">
-      <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:16}}>
-        <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>Novo Checklist de Inspeção Veicular</p>
-        <div className="gf2" style={{marginBottom:14}}>
-          <FF lb="Veículo (apenas disponíveis)" val={placa} set={setPlaca} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)}/>
-          <FF lb="Motorista Responsável" val={mot} set={setMot} opts={drivers.filter(d=>d.sit==="Ativo").map(d=>d.nome)}/>
+      <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:16,maxHeight:"80vh",overflowY:"auto"}}>
+        <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>Nova Vistoria Veicular</p>
+        <div className="gf2" style={{marginBottom:12}}>
+          <FF lb="Veículo" val={placa} set={setPlaca} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)}/>
+          <FF lb="Motorista / Vistoriador" val={mot} set={setMot} opts={drivers.filter(d=>d.sit==="Ativo").map(d=>d.nome)}/>
+        </div>
+        <div className="gf2" style={{marginBottom:12}}>
+          <FF lb="KM Atual" val={km} set={setKm} type="number"/>
+          <FF lb="Estado de Conservação Geral" val={estadoCons} set={setEstadoCons} opts={["Ótimo","Bom","Regular","Ruim","Péssimo"]}/>
+        </div>
+        <div style={{marginBottom:12}}>
+          <PhotoUpload photo={foto} setPhoto={setFoto} toast={toast} lb="Foto da Vistoria (opcional)"/>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <span style={{fontSize:12,fontWeight:700,color:"var(--tx)"}}>Itens de Inspeção ({ITEMS.length} obrigatórios)</span>
-          <span style={{fontSize:12,color:totalOk===ITEMS.length?"#16a34a":P,fontWeight:700}}>{totalOk}/{ITEMS.length} ✓</span>
+          <span style={{fontSize:12,fontWeight:700,color:"var(--tx)"}}>Itens de Inspeção ({TODOS.length} obrigatórios)</span>
+          <span style={{fontSize:12,color:totalOk===TODOS.length?"#16a34a":P,fontWeight:700}}>{totalOk}/{TODOS.length} ✓</span>
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:12}}>
-          {ITEMS.map((item,i)=><div key={i} onClick={()=>setCk(p=>({...p,[item]:!p[item]}))} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",background:ck[item]?"#dcfce7":"var(--ra)",cursor:"pointer",border:`1px solid ${ck[item]?"#86efac":"var(--bd)"}`,transition:"all .12s"}}>
-            <div style={{width:17,height:17,border:`2px solid ${ck[item]?"#16a34a":"var(--bd)"}`,background:ck[item]?"#16a34a":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ck[item]&&<Check size={10} color="white"/>}</div>
-            <span style={{fontSize:13,color:ck[item]?"#15803d":"var(--sub)",fontWeight:ck[item]?600:400}}>{item}</span>
-          </div>)}
-        </div>
+        <SecaoItens titulo="Mecânica e Motor" itens={ITENS_MECANICA}/>
+        <SecaoItens titulo="Elétrica e Iluminação" itens={ITENS_ELETRICA}/>
+        <SecaoItens titulo="Segurança e Documentação" itens={ITENS_SEGURANCA}/>
         <div style={{marginBottom:12}}><label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>Observações e Pendências</label><textarea value={obs} onChange={e=>setObs(e.target.value)} rows={2} style={{width:"100%",border:"1px solid var(--ibd)",padding:"8px 10px",fontSize:13,fontFamily:"inherit",resize:"vertical",background:"var(--inp)",color:"var(--tx)"}}/></div>
-        <Btn click={enviar} full>{`Finalizar Checklist (${totalOk}/${ITEMS.length} ✓)`}</Btn>
+        <Btn click={enviar} full>{`Finalizar Vistoria (${totalOk}/${TODOS.length} ✓)`}</Btn>
       </div>
+
       <div style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
-        <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontWeight:700,fontSize:14,color:"var(--tx)"}}>Histórico de Inspeções</span>
-        </div>
-        {hist.length===0
-          ?<div style={{padding:"32px",textAlign:"center",color:"var(--mu)",fontSize:13}}>Nenhuma inspeção registrada ainda.</div>
+        <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)"}}><span style={{fontWeight:700,fontSize:14,color:"var(--tx)"}}>Histórico de Vistorias</span></div>
+        {vistorias.length===0
+          ?<div style={{padding:"32px",textAlign:"center",color:"var(--mu)",fontSize:13}}>Nenhuma vistoria registrada ainda.</div>
           :<div className="tbl"><table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-            <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Data"/><Th ch="Itens"/><Th ch="Resultado"/></tr></thead>
-            <tbody>{hist.map((h,i)=><tr key={h.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}><Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{h.id}</span>}/><Td ch={<span style={{fontWeight:600,color:NAV_BG,fontSize:12}}>{h.placa}</span>}/><Td ch={<span style={{fontSize:12}}>{h.mot}</span>}/><Td ch={<span style={{fontSize:12,whiteSpace:"nowrap"}}>{h.data}</span>}/><Td ch={<span style={{fontSize:12,fontWeight:600}}>{h.ok}/{h.total}</span>}/><Td ch={<Bdg lb={h.res} tp={h.res==="Aprovado"?"ok":h.res.includes("ressalvas")?"warn":"bad"}/>}/></tr>)}
+            <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Data"/><Th ch="Conservação"/><Th ch="Itens"/><Th ch="Resultado"/><Th ch=""/></tr></thead>
+            <tbody>{vistorias.map((h,i)=><tr key={h.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
+              <Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{h.id}</span>}/>
+              <Td ch={<span style={{fontWeight:600,color:NAV_BG,fontSize:12}}>{h.placa}</span>}/>
+              <Td ch={<span style={{fontSize:12}}>{h.mot}</span>}/>
+              <Td ch={<span style={{fontSize:12,whiteSpace:"nowrap"}}>{h.data}</span>}/>
+              <Td ch={<span style={{fontSize:12,fontWeight:600,color:corEstado[h.estadoCons]||"var(--tx)"}}>{h.estadoCons||"—"}</span>}/>
+              <Td ch={<span style={{fontSize:12,fontWeight:600}}>{h.ok}/{h.total}</span>}/>
+              <Td ch={<Bdg lb={h.res} tp={h.res==="Aprovado"?"ok":h.res.includes("ressalvas")?"warn":"bad"}/>}/>
+              <Td ch={<button onClick={()=>setSel(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button>}/>
+            </tr>)}
             </tbody>
           </table></div>
         }
       </div>
     </div>
+
+    {sel&&<Modal title={`Vistoria ${sel.id} — ${sel.placa}`} close={()=>setSel(null)} w={700}>
+      {sel.foto&&<div style={{width:"100%",height:180,background:`url(${sel.foto})`,backgroundSize:"cover",backgroundPosition:"center",marginBottom:14,border:"1px solid var(--bd)"}}/>}
+      <div className="g2">
+        <div>{[["Veículo",sel.placa],["Motorista",sel.mot],["Data",sel.data],["KM",sel.km>0?sel.km.toLocaleString("pt-BR")+" km":"—"],["Conservação",sel.estadoCons||"—"],["Itens OK",`${sel.ok}/${sel.total}`],["Resultado",sel.res]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div>
+        <div>
+          {sel.itensFaltando?.length>0&&<><p style={{fontSize:10,fontWeight:700,color:"#dc2626",textTransform:"uppercase",margin:"0 0 6px"}}>Itens não conformes ({sel.itensFaltando.length})</p>{sel.itensFaltando.map((it,i)=><div key={i} style={{fontSize:12,color:"#dc2626",padding:"3px 0",borderBottom:"1px solid var(--bd)"}}>✗ {it}</div>)}</>}
+          {sel.obs&&<div style={{marginTop:10,background:"var(--ra)",border:"1px solid var(--bd)",padding:"8px 12px"}}><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",marginBottom:4}}>Observações</p><p style={{fontSize:12,color:"var(--sub)"}}>{sel.obs}</p></div>}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn ghost click={()=>setSel(null)}>Fechar</Btn></div>
+    </Modal>}
   </div>;
 }
 

@@ -1250,7 +1250,7 @@ if(vs)setVistorias(vs);
     vehicles:<Vehicles vehicles={vehicles} setVehicles={setVehicles} toast={toast}/>,
     drivers:<Drivers drivers={drivers} setDrivers={setDrivers} toast={toast}/>,
     trips:<Trips vehicles={vehicles} setVehicles={setVehicles} drivers={drivers} trips={trips} setTrips={setTrips} toast={toast}/>,
-    checklist:<Checklist vehicles={vehicles} drivers={drivers} toast={toast}/>,
+    checklist:<Checklist vehicles={vehicles} setVehicles={setVehicles} drivers={drivers} vistorias={vistorias} setVistorias={setVistorias} toast={toast}/>,
     fuel:<FuelPage vehicles={vehicles} drivers={drivers} fuel={fuel} setFuel={setFuel} toast={toast}/>,
     maintenance:<MaintenancePage vehicles={vehicles} setVehicles={setVehicles} maint={maint} setMaint={setMaint} toast={toast}/>,
     fines:<Fines vehicles={vehicles} fines={fines} setFines={setFines} toast={toast}/>,

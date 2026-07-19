@@ -718,12 +718,120 @@ function Financial({vehicles,fuel,maint,toast}){
 }
 
 /* ═══ REPORTS ═══ */
-function Reports({toast}){
-  const[periodo,setPeriodo]=useState("Atual");const[sec,setSec]=useState("Todas");
-  const gerar=(n,fmt)=>{toast(`Gerando "${n}" (${fmt.toUpperCase()})...`,"info");setTimeout(()=>toast(`✓ "${n}" exportado!`),2200);};
-  const rpts=[{t:"Frota Completa",d:"Situação, KM e custos de todos os veículos",I:Car},{t:"Histórico de Viagens",d:"Viagens do período com destinos e custos",I:MapPin},{t:"Consumo de Combustível",d:"Análise de consumo e gastos por veículo",I:Fuel},{t:"Ordens de Serviço",d:"Histórico de manutenções e custos",I:Wrench},{t:"Gastos por Secretaria",d:"Distribuição de custos por órgão",I:Building2},{t:"Validade de Documentos",d:"CRLV, seguros, revisões e CNHs",I:FileText},{t:"Indicadores KPI",d:"Custo/km, ociosidade, consumo, eficiência",I:BarChart2},{t:"Relatório Executivo",d:"Resumo para o Gabinete do Prefeito",I:Shield},{t:"Controle de Multas",d:"Infrações, valores e situação atual",I:AlertOctagon},{t:"Relatório de Motoristas",d:"Desempenho, CNH e histórico",I:Users},{t:"Transparência Pública",d:"Dados para publicação — Lei 12.527/2011",I:Activity},{t:"Prestação de Contas",d:"Relatório para o Tribunal de Contas",I:DollarSign}];
+function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
+  const[periodo,setPeriodo]=useState("Atual");
+  const[sec,setSec]=useState("Todas");
+
+  const gerarPDF=(tipo)=>{
+    const data=new Date().toLocaleDateString("pt-BR");
+    const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    let corpo="";
+    if(tipo==="Frota Completa"){
+      const lista=vehicles.filter(v=>sec==="Todas"||v.sec===sec);
+      corpo=`<table><thead><tr><th>Placa</th><th>Modelo</th><th>Secretaria</th><th>Tipo</th><th>KM</th><th>Combustível</th><th>Revisão</th><th>Seguro</th><th>Situação</th></tr></thead><tbody>
+        ${lista.map(v=>`<tr><td><b>${v.placa}</b></td><td>${v.marca} ${v.modelo}</td><td>${v.sec}</td><td>${v.tipo}</td><td>${v.km>0?v.km.toLocaleString("pt-BR")+" km":"Hor."}</td><td>${v.comb}</td><td>${v.rev||"—"}</td><td>${v.seg||"—"}</td><td>${v.sit}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${lista.length} veículos</p>`;
+    } else if(tipo==="Histórico de Viagens"){
+      const lista=trips.filter(t=>sec==="Todas"||t.sec===sec);
+      corpo=`<table><thead><tr><th>Código</th><th>Veículo</th><th>Motorista</th><th>Destino</th><th>Secretaria</th><th>Saída</th><th>Retorno</th><th>Situação</th></tr></thead><tbody>
+        ${lista.map(t=>`<tr><td>${t.id}</td><td>${t.placa}</td><td>${t.mot}</td><td>${t.dest}</td><td>${t.sec}</td><td>${t.saida}</td><td>${t.ret||"—"}</td><td>${t.sit}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${lista.length} viagens</p>`;
+    } else if(tipo==="Consumo de Combustível"){
+      const lista=fuel.filter(f=>sec==="Todas"||vehicles.find(v=>v.placa===f.placa)?.sec===sec);
+      const totL=lista.reduce((a,x)=>a+x.litros,0);
+      const totR=lista.reduce((a,x)=>a+x.total,0);
+      corpo=`<table><thead><tr><th>Código</th><th>Veículo</th><th>Motorista</th><th>Data</th><th>Posto</th><th>Tipo</th><th>Litros</th><th>R$/L</th><th>Total</th></tr></thead><tbody>
+        ${lista.map(f=>`<tr><td>${f.id}</td><td>${f.placa}</td><td>${f.mot||"—"}</td><td>${f.data}</td><td>${f.posto||"—"}</td><td>${f.tipo}</td><td>${f.litros.toFixed(1)} L</td><td>R$ ${f.vl.toFixed(2)}</td><td><b>R$ ${f.total.toFixed(2)}</b></td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${totL.toFixed(1)} litros — R$ ${totR.toFixed(2)}</p>`;
+    } else if(tipo==="Ordens de Serviço"){
+      const lista=maint.filter(m=>sec==="Todas"||vehicles.find(v=>v.placa===m.placa)?.sec===sec);
+      const totC=lista.reduce((a,x)=>a+x.custo,0);
+      corpo=`<table><thead><tr><th>OS</th><th>Veículo</th><th>Tipo</th><th>Descrição</th><th>Oficina</th><th>Abertura</th><th>Custo</th><th>Prior.</th><th>Status</th></tr></thead><tbody>
+        ${lista.map(m=>`<tr><td>${m.id}</td><td>${m.placa}</td><td>${m.tipo}</td><td>${m.desc}</td><td>${m.oficina||"—"}</td><td>${m.criado}</td><td><b>R$ ${m.custo.toFixed(2)}</b></td><td>${m.prior}</td><td>${m.status}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${lista.length} OSs — R$ ${totC.toFixed(2)}</p>`;
+    } else if(tipo==="Controle de Multas"){
+      const tot=fines.reduce((a,x)=>a+x.valor,0);
+      corpo=`<table><thead><tr><th>Código</th><th>Veículo</th><th>Motorista</th><th>Data</th><th>Infração</th><th>Valor</th><th>Status</th></tr></thead><tbody>
+        ${fines.map(m=>`<tr><td>${m.id}</td><td>${m.placa}</td><td>${m.mot}</td><td>${m.data}</td><td>${m.inf}</td><td><b>R$ ${m.valor.toFixed(2)}</b></td><td>${m.status}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${fines.length} multas — R$ ${tot.toFixed(2)}</p>`;
+    } else if(tipo==="Relatório de Motoristas"){
+      const lista=drivers.filter(d=>sec==="Todas"||d.sec===sec);
+      corpo=`<table><thead><tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Secretaria</th><th>Cat. CNH</th><th>Validade CNH</th><th>Situação</th><th>Viagens</th></tr></thead><tbody>
+        ${lista.map(d=>`<tr><td>${d.mat||"—"}</td><td><b>${d.nome}</b></td><td>${d.cargo}</td><td>${d.sec}</td><td>Cat. ${d.cnh}</td><td>${d.valCnh||"—"}</td><td>${d.sit}</td><td>${d.viagens||0}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${lista.length} motoristas</p>`;
+    } else if(tipo==="Relatório Executivo"){
+      const totalC=fuel.reduce((a,x)=>a+x.total,0);
+      const totalM=maint.reduce((a,x)=>a+x.custo,0);
+      corpo=`<div class="exec">
+        <div class="bloco"><h3>Frota</h3><p>Total de veículos: <b>${vehicles.length}</b></p><p>Disponíveis: <b>${vehicles.filter(v=>v.sit==="Disponível").length}</b></p><p>Em uso: <b>${vehicles.filter(v=>v.sit==="Em uso").length}</b></p><p>Em manutenção: <b>${vehicles.filter(v=>v.sit==="Manutenção").length}</b></p></div>
+        <div class="bloco"><h3>Motoristas</h3><p>Cadastrados: <b>${drivers.length}</b></p><p>Ativos: <b>${drivers.filter(d=>d.sit==="Ativo").length}</b></p><p>Total viagens: <b>${trips.length}</b></p></div>
+        <div class="bloco"><h3>Financeiro</h3><p>Combustível: <b>R$ ${totalC.toFixed(2)}</b></p><p>Manutenção: <b>R$ ${totalM.toFixed(2)}</b></p><p>Total geral: <b>R$ ${(totalC+totalM).toFixed(2)}</b></p></div>
+        <div class="bloco"><h3>Multas</h3><p>Total: <b>${fines.length}</b></p><p>Pendentes: <b>${fines.filter(x=>x.status==="Pendente").length}</b></p><p>Valor: <b>R$ ${fines.reduce((a,x)=>a+x.valor,0).toFixed(2)}</b></p></div>
+      </div>`;
+    } else {
+      corpo=`<p style="padding:20px;color:#64748b;">Relatório "${tipo}" — dados conforme registros do sistema.</p>`;
+    }
+    const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tipo} — SGA Upanema</title>
+    <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a;padding:20px;}.topo{border-bottom:3px solid #0c1a47;padding-bottom:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end;}.topo h1{font-size:20px;font-weight:800;color:#0c1a47;}.topo .sub{font-size:11px;color:#64748b;margin-top:3px;}.meta{font-size:11px;color:#64748b;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:14px;}th{background:#0c1a47;color:white;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;}td{padding:6px 9px;border-bottom:1px solid #e2e8f0;font-size:11px;}tr:nth-child(even){background:#f8fafc;}b{font-weight:700;}.total{font-size:12px;font-weight:700;color:#0c1a47;padding:8px 0;border-top:2px solid #0c1a47;margin-top:4px;}.exec{display:grid;grid-template-columns:1fr 1fr;gap:16px;}.bloco{border:1px solid #e2e8f0;padding:14px;}.bloco h3{font-size:13px;font-weight:700;color:#0c1a47;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #1d4ed8;}.bloco p{margin-bottom:5px;font-size:12px;color:#374151;}.rodape{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between;}@media print{body{padding:10px;}@page{margin:1.5cm;}}</style>
+    </head><body>
+    <div class="topo"><div><div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Prefeitura Municipal de Upanema — RN</div><h1>SGA Frota — ${tipo}</h1><div class="sub">Período: ${periodo} · Secretaria: ${sec}</div></div><div class="meta">Emitido em: ${data} às ${hora}<br/>Sistema de Gestão da Garagem</div></div>
+    ${corpo}
+    <div class="rodape"><span>© 2025 Prefeitura Municipal de Upanema — RN · SGA Frota Municipal</span><span>Página 1</span></div>
+    </body></html>`;
+    const w=window.open("","_blank","width=900,height=700");
+    if(!w){toast("Permita pop-ups para gerar o PDF.","danger");return;}
+    w.document.write(html);w.document.close();
+    setTimeout(()=>{w.focus();w.print();},500);
+    toast(`✓ "${tipo}" aberto — use Ctrl+P ou "Salvar como PDF".`);
+  };
+
+  const gerarCSV=(tipo)=>{
+    let linhas=[],nome="relatorio";
+    if(tipo==="Frota Completa"){
+      linhas=[["Placa","Marca","Modelo","Ano","Cor","Tipo","Secretaria","KM","Combustível","Situação","Revisão","Seguro"],
+        ...vehicles.filter(v=>sec==="Todas"||v.sec===sec).map(v=>[v.placa,v.marca,v.modelo,v.ano,v.cor,v.tipo,v.sec,v.km,v.comb,v.sit,v.rev||"",v.seg||""])];nome="frota_completa";
+    } else if(tipo==="Histórico de Viagens"){
+      linhas=[["Código","Veículo","Motorista","Destino","Secretaria","Finalidade","Saída","Retorno","Situação"],
+        ...trips.filter(t=>sec==="Todas"||t.sec===sec).map(t=>[t.id,t.placa,t.mot,t.dest,t.sec,t.fin,t.saida,t.ret||"",t.sit])];nome="historico_viagens";
+    } else if(tipo==="Consumo de Combustível"){
+      linhas=[["Código","Placa","Motorista","Data","Posto","Tipo","Litros","R$/L","Total R$"],
+        ...fuel.map(f=>[f.id,f.placa,f.mot||"",f.data,f.posto||"",f.tipo,f.litros,f.vl,f.total])];nome="abastecimento";
+    } else if(tipo==="Ordens de Serviço"){
+      linhas=[["OS","Veículo","Tipo","Descrição","Oficina","Abertura","Custo","Prioridade","Status"],
+        ...maint.map(m=>[m.id,m.placa,m.tipo,m.desc,m.oficina||"",m.criado,m.custo,m.prior,m.status])];nome="manutencao";
+    } else if(tipo==="Controle de Multas"){
+      linhas=[["Código","Veículo","Motorista","Data","Infração","Valor","Status"],
+        ...fines.map(m=>[m.id,m.placa,m.mot,m.data,m.inf,m.valor,m.status])];nome="multas";
+    } else if(tipo==="Relatório de Motoristas"){
+      linhas=[["Matrícula","Nome","Cargo","Secretaria","Cat. CNH","Validade CNH","Situação","Viagens"],
+        ...drivers.filter(d=>sec==="Todas"||d.sec===sec).map(d=>[d.mat||"",d.nome,d.cargo,d.sec,d.cnh,d.valCnh||"",d.sit,d.viagens||0])];nome="motoristas";
+    } else {
+      toast(`Exportação CSV para "${tipo}" em breve.`,"info");return;
+    }
+    const csv="\uFEFF"+linhas.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=`${nome}_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast(`✓ "${tipo}" exportado — abre direto no Excel.`);
+  };
+
+  const rpts=[
+    {t:"Frota Completa",d:"Situação, KM e custos de todos os veículos",I:Car},
+    {t:"Histórico de Viagens",d:"Viagens do período com destinos e custos",I:MapPin},
+    {t:"Consumo de Combustível",d:"Análise de consumo e gastos por veículo",I:Fuel},
+    {t:"Ordens de Serviço",d:"Histórico de manutenções e custos",I:Wrench},
+    {t:"Gastos por Secretaria",d:"Distribuição de custos por órgão",I:Building2},
+    {t:"Validade de Documentos",d:"CRLV, seguros, revisões e CNHs",I:FileText},
+    {t:"Indicadores KPI",d:"Custo/km, ociosidade, consumo, eficiência",I:BarChart2},
+    {t:"Relatório Executivo",d:"Resumo para o Gabinete do Prefeito",I:Shield},
+    {t:"Controle de Multas",d:"Infrações, valores e situação atual",I:AlertOctagon},
+    {t:"Relatório de Motoristas",d:"Desempenho, CNH e histórico",I:Users},
+    {t:"Transparência Pública",d:"Dados para publicação — Lei 12.527/2011",I:Activity},
+    {t:"Prestação de Contas",d:"Relatório para o Tribunal de Contas",I:DollarSign},
+  ];
   return<div>
-    <SH title="Central de Relatórios" sub="Geração de relatórios operacionais, financeiros e analíticos"/>
+    <SH title="Central de Relatórios" sub="PDF abre para impressão · CSV/Excel faz download direto"/>
     <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"12px 16px",marginBottom:16,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
       <span style={{fontSize:11,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em"}}>Filtros:</span>
       <select value={periodo} onChange={e=>setPeriodo(e.target.value)} style={{border:"1px solid var(--ibd)",padding:"6px 10px",fontSize:12,fontFamily:"inherit",color:"var(--tx)",background:"var(--inp)"}}>{["Atual","Último mês","Últimos 3 meses","Personalizado"].map(p=><option key={p}>{p}</option>)}</select>
@@ -736,8 +844,8 @@ function Reports({toast}){
         <div style={{fontSize:11,color:"var(--mu)",marginBottom:14,lineHeight:1.55}}>{r.d}</div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-        <button onClick={()=>gerar(r.t,"pdf")} style={{background:NAV_BG,color:"white",border:"none",padding:"7px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Download size={10}/>PDF</button>
-        <button onClick={()=>gerar(r.t,"xlsx")} style={{background:"#15803d",color:"white",border:"none",padding:"7px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Download size={10}/>Excel</button>
+        <button onClick={()=>gerarPDF(r.t)} style={{background:NAV_BG,color:"white",border:"none",padding:"7px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Download size={10}/>PDF</button>
+        <button onClick={()=>gerarCSV(r.t)} style={{background:"#15803d",color:"white",border:"none",padding:"7px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Download size={10}/>Excel/CSV</button>
       </div>
     </div>)}</div>
   </div>;
@@ -1144,7 +1252,7 @@ export default function App(){
     maintenance:<MaintenancePage vehicles={vehicles} setVehicles={setVehicles} maint={maint} setMaint={setMaint} toast={toast}/>,
     fines:<Fines vehicles={vehicles} fines={fines} setFines={setFines} toast={toast}/>,
     financial:<Financial vehicles={vehicles} fuel={fuel} maint={maint} toast={toast}/>,
-    reports:<Reports toast={toast}/>,
+    reports:<Reports toast={toast} vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel} maint={maint} fines={fines}/>,
     suppliers:<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} toast={toast}/>,
     alerts:<AlertsPage alerts={alerts} setAlerts={setAlerts} nav={goPage}/>,
     audit:<Audit log={log}/>,

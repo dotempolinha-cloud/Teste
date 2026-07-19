@@ -308,11 +308,17 @@ function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
 
 /* ═══ MODAIS DE CADASTRO ═══ */
 function VModal({v,save,close,toast}){
-  const blank={placa:"",marca:"",modelo:"",ano:"",cor:"",tipo:"Passeio",cat:"Administrativo",sec:"Administração",comb:"Gasolina",sit:"Disponível",renavam:"",chassi:"",pat:"",km:"0",niv:"100",rev:"",seg:"",obs:"",mot:null,mul:0,custo:0,kmm:0,foto:null};
-  const[f,setF]=useState(v||blank);const u=k=>val=>setF(p=>({...p,[k]:val}));
+  const blank={placa:"",marca:"",modelo:"",ano:"",cor:"",tipo:"Passeio",cat:"Administrativo",sec:"Administração",comb:"Gasolina",sit:"Disponível",renavam:"",chassi:"",pat:"",km:"0",niv:"100",rev:"",seg:"",obs:"",mot:null,mul:0,custo:0,kmm:0,foto:null,fotos:[],fotoDoc:null,estadoCons:"Bom"};
+  const[f,setF]=useState({...blank,...(v||{}),fotos:v?.fotos||[],foto:v?.foto||null,fotoDoc:v?.fotoDoc||null,estadoCons:v?.estadoCons||"Bom"});
+  const u=k=>val=>setF(p=>({...p,[k]:val}));
   const go=()=>{if(!f.placa||!f.modelo){toast("Preencha Placa e Modelo.","danger");return;}save({...f,id:v?.id||`V${Date.now().toString().slice(-6)}`,km:+f.km||0,niv:+f.niv||0});toast(v?"Veículo atualizado!":"Veículo cadastrado com sucesso!");close();};
-  return<Modal title={v?`Editar — ${v.placa}`:"Cadastrar Novo Veículo"} close={close} w={780}>
-    <div style={{marginBottom:16}}><PhotoUpload photo={f.foto} setPhoto={p=>u("foto")(p)} toast={toast}/></div>
+  return<Modal title={v?`Editar — ${v.placa}`:"Cadastrar Novo Veículo"} close={close} w={820}>
+    {/* Fotos */}
+    <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Fotos e Documentos</p>
+    <div className="gf3" style={{marginBottom:16}}>
+      <MultiPhotoUpload fotos={f.fotos} setFotos={p=>setF(x=>({...x,fotos:typeof p==="function"?p(x.fotos):p}))} toast={toast} max={5} lb="Fotos do Veículo (até 5)"/>
+      <PhotoUpload photo={f.fotoDoc} setPhoto={u("fotoDoc")} toast={toast} lb="Foto do CRLV / Documento"/>
+    </div>
     <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Identificação</p>
     <div className="gf3"><FF lb="Placa" val={f.placa} set={u("placa")} req/><FF lb="RENAVAM" val={f.renavam} set={u("renavam")}/><FF lb="Patrimônio" val={f.pat} set={u("pat")}/></div>
     <div className="gf3"><FF lb="Chassi" val={f.chassi} set={u("chassi")}/><FF lb="Ano" val={f.ano} set={u("ano")} type="number"/><FF lb="Cor" val={f.cor} set={u("cor")}/></div>
@@ -328,6 +334,7 @@ function VModal({v,save,close,toast}){
     <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"14px 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Controle Operacional</p>
     <div className="gf3">
       <FF lb="Situação" val={f.sit} set={u("sit")} opts={["Disponível","Em uso","Manutenção","Baixado","Leiloado","Sinistrado"]}/>
+      <FF lb="Estado de Conservação" val={f.estadoCons} set={u("estadoCons")} opts={["Ótimo","Bom","Regular","Ruim","Péssimo"]}/>
       <FF lb="KM Atual" val={f.km} set={u("km")} type="number"/>
       <FF lb="Nível Comb. (%)" val={f.niv} set={u("niv")} type="number"/>
       <FF lb="Próxima Revisão" val={f.rev} set={u("rev")}/>

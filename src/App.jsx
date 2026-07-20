@@ -330,36 +330,7 @@ function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
   </div>;
 }
 
-/* ═══ UPLOAD DE MÚLTIPLAS FOTOS ═══ */
-function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
-  const inputRef=useRef(null);
-  const onFile=e=>{
-    const files=Array.from(e.target.files||[]);
-    const sobra=max-(fotos.length);
-    if(sobra<=0){toast(`Máximo de ${max} fotos.`,"warning");return;}
-    files.slice(0,sobra).forEach(file=>{
-      if(!file.type.startsWith("image/")){toast("Apenas imagens.","danger");return;}
-      if(file.size>3*1024*1024){toast(`${file.name} muito grande (máx 3MB).`,"danger");return;}
-      const reader=new FileReader();
-      reader.onload=ev=>setFotos(p=>[...p,{id:Date.now()+Math.random(),src:ev.target.result,nome:file.name}]);
-      reader.readAsDataURL(file);
-    });
-    e.target.value="";
-  };
-  return<div style={{display:"flex",flexDirection:"column",gap:6}}>
-    <label style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em"}}>{lb} ({fotos.length}/{max})</label>
-    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-start"}}>
-      {fotos.map((ft,i)=><div key={ft.id} style={{position:"relative",width:80,height:60,flexShrink:0}}>
-        <div style={{width:"100%",height:"100%",background:`url(${ft.src})`,backgroundSize:"cover",backgroundPosition:"center",border:"1px solid var(--ibd)"}}/>
-        <button onClick={()=>setFotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:2,right:2,width:16,height:16,background:"#dc2626",border:"none",borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><X size={9} color="white"/></button>
-      </div>)}
-      {fotos.length<max&&<div onClick={()=>inputRef.current?.click()} style={{width:80,height:60,border:"2px dashed var(--bd)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:3}}>
-        <Camera size={16} color="var(--mu)"/><span style={{fontSize:9,color:"var(--mu)"}}>Adicionar</span>
-      </div>}
-    </div>
-    <input ref={inputRef} type="file" accept="image/*" multiple onChange={onFile} style={{display:"none"}}/>
-  </div>;
-}
+
 
 /* ═══ MODAIS DE CADASTRO ═══ */
 function VModal({v,save,close,toast}){

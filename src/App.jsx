@@ -935,7 +935,7 @@ function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
 
 /* ═══ FINES ═══ */
 function Fines({vehicles,fines,setFines,toast}){
-  const[show,setShow]=useState(false);const[f,setF]=useState({placa:"",mot:"",data:"",inf:"",valor:""});
+  const[show,setShow]=useState(false);const[cfm,setCfm]=useState(null);const[f,setF]=useState({placa:"",mot:"",data:"",inf:"",valor:""});
   const u=k=>v=>setF(p=>({...p,[k]:v}));
   const reg=()=>{
     if(!f.placa||!f.inf){toast("Preencha veículo e infração.","danger");return;}
@@ -978,6 +978,7 @@ function Fines({vehicles,fines,setFines,toast}){
       </div>
     }
   </div>;
+  {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
 }
 
 
@@ -1085,7 +1086,7 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
               <Td ch={<span style={{fontSize:12,fontWeight:600,color:corEstado[h.estadoCons]||"var(--tx)"}}>{h.estadoCons||"—"}</span>}/>
               <Td ch={<span style={{fontSize:12,fontWeight:600}}>{h.ok}/{h.total}</span>}/>
               <Td ch={<Bdg lb={h.res} tp={h.res==="Aprovado"?"ok":h.res.includes("ressalvas")?"warn":"bad"}/>}/>
-              <Td ch={<button onClick={()=>setSel(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button>}/>
+              <Td ch={<div style={{display:"flex",gap:4}}><button onClick={()=>setSel(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button><button onClick={()=>setVistorias(p=>p.filter(x=>x.id!==h.id))&&toast("Vistoria removida.","danger")||setVistorias(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",padding:"3px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button></div>}/>
             </tr>)}
             </tbody>
           </table></div>

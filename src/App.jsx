@@ -259,6 +259,7 @@ function Lightbox({src,close}){
 /* ═══ UPLOAD DE FOTO ÚNICA ═══ */
 function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
   const inputRef=useRef(null);
+  const[lb_open,setLbOpen]=useState(false);
   const onFile=e=>{
     const file=e.target.files?.[0];
     if(!file)return;
@@ -268,19 +269,64 @@ function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
     reader.onload=ev=>setPhoto(ev.target.result);
     reader.readAsDataURL(file);
   };
-  return<div style={{display:"flex",flexDirection:"column",gap:4}}>
+  return<div style={{display:"flex",flexDirection:"column",gap:6}}>
     <label style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em"}}>{lb}</label>
-    <div style={{display:"flex",gap:12,alignItems:"center"}}>
-      <div onClick={()=>inputRef.current?.click()} style={{width:100,height:75,background:photo?`url(${photo})`:"var(--ra)",backgroundSize:"cover",backgroundPosition:"center",border:"1px solid var(--ibd)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,position:"relative",overflow:"hidden"}}>
-        {!photo&&<ImageOff size={20} color="var(--mu)"/>}
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.4)",opacity:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}><Camera size={18} color="white"/></div>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        <Btn ghost sm Ic={Camera} click={()=>inputRef.current?.click()}>{photo?"Trocar":"Adicionar"}</Btn>
-        {photo&&<button onClick={()=>setPhoto(null)} style={{background:"none",border:"none",color:"#dc2626",fontSize:11,cursor:"pointer",textAlign:"left",fontFamily:"inherit",padding:0}}>Remover</button>}
+    <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
+      {photo
+        ?<div style={{position:"relative",flexShrink:0}}>
+            <img src={photo} alt="preview" onClick={()=>setLbOpen(true)} style={{width:120,height:90,objectFit:"contain",border:"1px solid var(--ibd)",background:"var(--ra)",cursor:"zoom-in",display:"block"}}/>
+            <div style={{position:"absolute",top:4,right:4,display:"flex",gap:3}}>
+              <button onClick={()=>setLbOpen(true)} title="Ampliar" style={{background:"rgba(0,0,0,.55)",border:"none",borderRadius:3,padding:"2px 5px",cursor:"pointer",color:"white",fontSize:10}}>🔍</button>
+              <button onClick={()=>setPhoto(null)} title="Remover" style={{background:"rgba(220,38,38,.8)",border:"none",borderRadius:3,padding:"2px 5px",cursor:"pointer",color:"white",fontSize:10}}>✕</button>
+            </div>
+          </div>
+        :<div onClick={()=>inputRef.current?.click()} style={{width:120,height:90,border:"2px dashed var(--bd)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4,flexShrink:0}}>
+            <Camera size={20} color="var(--mu)"/><span style={{fontSize:10,color:"var(--mu)"}}>Adicionar</span>
+          </div>
+      }
+      <div style={{display:"flex",flexDirection:"column",gap:6,paddingTop:4}}>
+        <Btn ghost sm Ic={Camera} click={()=>inputRef.current?.click()}>{photo?"Trocar foto":"Selecionar foto"}</Btn>
+        <span style={{fontSize:10,color:"var(--mu)",lineHeight:1.4}}>JPG, PNG ou WEBP<br/>Máximo 3 MB</span>
       </div>
     </div>
     <input ref={inputRef} type="file" accept="image/*" onChange={onFile} style={{display:"none"}}/>
+    {lb_open&&<Lightbox src={photo} close={()=>setLbOpen(false)}/>}
+  </div>;
+}
+
+/* ═══ UPLOAD DE MÚLTIPLAS FOTOS ═══ */
+function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
+  const inputRef=useRef(null);
+  const[lbSrc,setLbSrc]=useState(null);
+  const onFile=e=>{
+    const files=Array.from(e.target.files||[]);
+    const sobra=max-(fotos.length);
+    if(sobra<=0){toast(`Máximo de ${max} fotos.`,"warning");return;}
+    files.slice(0,sobra).forEach(file=>{
+      if(!file.type.startsWith("image/")){toast("Apenas imagens.","danger");return;}
+      if(file.size>3*1024*1024){toast(`${file.name} muito grande (máx 3MB).`,"danger");return;}
+      const reader=new FileReader();
+      reader.onload=ev=>setFotos(p=>[...p,{id:Date.now()+Math.random(),src:ev.target.result,nome:file.name}]);
+      reader.readAsDataURL(file);
+    });
+    e.target.value="";
+  };
+  return<div style={{display:"flex",flexDirection:"column",gap:8}}>
+    <label style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em"}}>{lb} ({fotos.length}/{max})</label>
+    <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-start"}}>
+      {fotos.map((ft,i)=><div key={ft.id} style={{position:"relative",flexShrink:0}}>
+        <img src={ft.src} alt={ft.nome} onClick={()=>setLbSrc(ft.src)} style={{width:100,height:75,objectFit:"contain",border:"1px solid var(--ibd)",background:"var(--ra)",cursor:"zoom-in",display:"block"}}/>
+        <div style={{position:"absolute",top:3,right:3,display:"flex",gap:2}}>
+          <button onClick={()=>setLbSrc(ft.src)} title="Ampliar" style={{background:"rgba(0,0,0,.55)",border:"none",borderRadius:3,padding:"1px 4px",cursor:"pointer",color:"white",fontSize:10}}>🔍</button>
+          <button onClick={()=>setFotos(p=>p.filter((_,j)=>j!==i))} title="Remover" style={{background:"rgba(220,38,38,.8)",border:"none",borderRadius:3,padding:"1px 4px",cursor:"pointer",color:"white",fontSize:10}}>✕</button>
+        </div>
+      </div>)}
+      {fotos.length<max&&<div onClick={()=>inputRef.current?.click()} style={{width:100,height:75,border:"2px dashed var(--bd)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4,flexShrink:0}}>
+        <Camera size={18} color="var(--mu)"/><span style={{fontSize:10,color:"var(--mu)"}}>Adicionar</span>
+      </div>}
+    </div>
+    <input ref={inputRef} type="file" accept="image/*" multiple onChange={onFile} style={{display:"none"}}/>
+    {lbSrc&&<Lightbox src={lbSrc} close={()=>setLbSrc(null)}/>}
   </div>;
 }
 

@@ -246,6 +246,15 @@ function SH({title,sub,action}){
 const DR=({l,v})=><div style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid var(--bd)",fontSize:13,gap:8}}><span style={{color:"var(--mu)",fontSize:12,flexShrink:0}}>{l}</span><span style={{fontWeight:600,color:"var(--tx)",textAlign:"right"}}>{v}</span></div>;
 function SBar({val,set,ph}){return<div style={{flex:"1 1 160px",position:"relative",minWidth:140}}><Search size={13} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"var(--mu)"}}/><input value={val} onChange={e=>set(e.target.value)} placeholder={ph||"Pesquisar..."} style={{width:"100%",border:"1px solid var(--ibd)",padding:"9px 12px 9px 30px",fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}}/></div>;}
 
+/* ═══ LIGHTBOX — visualizador de foto em tela cheia ═══ */
+function Lightbox({src,close}){
+  if(!src)return null;
+  return<div onClick={close} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,cursor:"zoom-out"}}>
+    <button onClick={close} style={{position:"absolute",top:16,right:16,background:"rgba(255,255,255,.15)",border:"none",borderRadius:"50%",width:36,height:36,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={18} color="white"/></button>
+    <img src={src} alt="Foto" onClick={e=>e.stopPropagation()} style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",boxShadow:"0 8px 40px rgba(0,0,0,.6)",cursor:"default"}}/>
+  </div>;
+}
+
 /* ═══ FOTO DO VEÍCULO — Upload com preview, salvo como Base64 ═══ */
 /* ═══ UPLOAD DE FOTO ÚNICA ═══ */
 function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){

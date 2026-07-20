@@ -972,7 +972,7 @@ function Fines({vehicles,fines,setFines,toast}){
             <Td ch={<span style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"block"}}>{m.inf}</span>}/>
             <Td ch={<span style={{fontWeight:700,color:"#dc2626",whiteSpace:"nowrap"}}>R$ {m.valor.toFixed(2)}</span>}/>
             <Td ch={<SBdg v={m.status}/>}/>
-            <Td ch={<div style={{display:"flex",gap:4}}>{m.status==="Pendente"?<><Btn sm click={()=>pagar(m.id)}>Pagar</Btn><Btn ghost sm click={()=>recurso(m.id)}>Recurso</Btn></>:<span style={{fontSize:11,color:"var(--mu)"}}>—</span>}</div>}/>
+            <Td ch={<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{m.status==="Pendente"&&<><Btn sm click={()=>pagar(m.id)}>Pagar</Btn><Btn ghost sm click={()=>recurso(m.id)}>Recurso</Btn></>}<button onClick={()=>setCfm({msg:`Excluir multa ${m.id}?`,ok:()=>{setFines(fines.filter(x=>x.id!==m.id));toast("Multa excluída.","danger");setCfm(null);}})} style={{background:"none",border:"none",padding:"3px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button></div>}/>
           </tr>)}</tbody>
         </table>
       </div>

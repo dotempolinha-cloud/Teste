@@ -50,6 +50,7 @@ html,body{width:100%;min-height:100vh;overflow-x:hidden;}
 .sga-mn{
   margin-left:248px;flex:1;display:flex;flex-direction:column;
   min-height:100vh;overflow-x:hidden;transition:margin-left .28s ease;
+  width:calc(100% - 248px);max-width:100%;
 }
 .sga-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150;}
 .sga-ov.vis{display:block;}
@@ -657,7 +658,10 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
             <Td ch={<span style={{fontSize:12,color:t.ret?"var(--sub)":"var(--mu)",whiteSpace:"nowrap"}}>{t.ret||"—"}</span>}/>
             <Td ch={<span style={{fontSize:11,color:"var(--mu)"}}>{t.sec}</span>}/>
             <Td ch={<SBdg v={t.sit}/>}/>
-            <Td ch={t.sit==="Em andamento"?<button onClick={()=>retornar(t.id)} style={{background:"#16a34a",color:"white",border:"none",padding:"4px 9px",fontSize:11,cursor:"pointer",fontWeight:600,fontFamily:"inherit",whiteSpace:"nowrap"}}>Registrar Retorno</button>:<span style={{fontSize:11,color:"var(--mu)"}}>—</span>}/>
+            <Td ch={<div style={{display:"flex",gap:4,alignItems:"center"}}>
+  {t.sit==="Em andamento"&&<button onClick={()=>retornar(t.id)} style={{background:"#16a34a",color:"white",border:"none",padding:"4px 9px",fontSize:11,cursor:"pointer",fontWeight:600,fontFamily:"inherit",whiteSpace:"nowrap"}}>Registrar Retorno</button>}
+  <button onClick={()=>{if(window.confirm(`Excluir viagem ${t.id}?`)){setTrips(p=>p.filter(x=>x.id!==t.id));if(t.sit==="Em andamento")setVehicles(p=>p.map(v=>v.placa===t.placa?{...v,sit:"Disponível",mot:null}:v));toast("Viagem excluída.","danger");}}} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>
+</div>}/>
           </tr>)}</tbody>
         </table>
       </div>
@@ -694,7 +698,7 @@ function FuelPage({vehicles,drivers,fuel,setFuel,toast}){
       ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><Fuel size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhum abastecimento registrado</div></div>
       :<div className="tbl" style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Data"/><Th ch="Posto"/><Th ch="Tipo"/><Th ch="Litros"/><Th ch="R$/L"/><Th ch="Total"/></tr></thead>
+          <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Data"/><Th ch="Posto"/><Th ch="Tipo"/><Th ch="Litros"/><Th ch="R$/L"/><Th ch="Total"/><Th ch=""/></tr></thead>
           <tbody>{fuel.map((x,i)=><tr key={x.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{x.id}</span>}/>
             <Td ch={<div><div style={{fontWeight:600,fontSize:12}}>{x.placa}</div><div style={{fontSize:11,color:"var(--mu)"}}>{x.mod}</div></div>}/>
@@ -703,6 +707,7 @@ function FuelPage({vehicles,drivers,fuel,setFuel,toast}){
             <Td ch={<span style={{fontWeight:500}}>{x.litros.toFixed(1)} L</span>}/>
             <Td ch={<span style={{fontSize:12}}>R$ {x.vl.toFixed(2)}</span>}/>
             <Td ch={<span style={{fontWeight:700,color:P,whiteSpace:"nowrap"}}>R$ {x.total.toFixed(2)}</span>}/>
+            <Td ch={<button onClick={()=>{if(window.confirm(`Excluir abastecimento ${x.id}?`)){setFuel(p=>p.filter(f=>f.id!==x.id));toast("Abastecimento excluído.","danger");}}} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>}/>
           </tr>)}</tbody>
         </table>
       </div>
@@ -1443,7 +1448,7 @@ if(vs)setVistorias(vs);
           <div className="spin" style={{width:32,height:32,border:"3px solid var(--bd)",borderTopColor:P,borderRadius:"50%"}}/>
           <span style={{fontSize:13,color:"var(--mu)",fontWeight:600}}>Carregando dados...</span>
         </div>}
-        <main style={{flex:1,padding:"18px",overflowY:"auto",maxWidth:"100%"}}>
+        <main style={{flex:1,padding:"20px 28px",overflowY:"auto",width:"100%",minWidth:0}}>
           {pages[safePage]||<Dashboard nav={goPage} vehicles={vehicles} drivers={drivers} alerts={alerts} fuel={fuel} maint={maint}/>}
         </main>
         <footer style={{padding:"8px 18px",borderTop:"1px solid var(--bd)",background:"var(--card)",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:"var(--mu)",flexShrink:0,flexWrap:"wrap",gap:4}}>

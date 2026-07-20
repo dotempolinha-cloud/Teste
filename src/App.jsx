@@ -935,7 +935,9 @@ function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
 
 /* ═══ FINES ═══ */
 function Fines({vehicles,fines,setFines,toast}){
-  const[show,setShow]=useState(false);const[cfm,setCfm]=useState(null);const[f,setF]=useState({placa:"",mot:"",data:"",inf:"",valor:""});
+  const[show,setShow]=useState(false);
+  const[cfm,setCfm]=useState(null);
+  const[f,setF]=useState({placa:"",mot:"",data:"",inf:"",valor:""});
   const u=k=>v=>setF(p=>({...p,[k]:v}));
   const reg=()=>{
     if(!f.placa||!f.inf){toast("Preencha veículo e infração.","danger");return;}
@@ -946,6 +948,7 @@ function Fines({vehicles,fines,setFines,toast}){
   };
   const pagar=id=>{setFines(fines.map(x=>x.id===id?{...x,status:"Pago"}:x));toast("✓ Multa marcada como paga.");};
   const recurso=id=>{setFines(fines.map(x=>x.id===id?{...x,status:"Em recurso"}:x));toast("✓ Recurso cadastrado.");};
+  const excluir=m=>setCfm({msg:`Excluir multa ${m.id} — ${m.placa}? Esta ação não pode ser desfeita.`,ok:()=>{setFines(p=>p.filter(x=>x.id!==m.id));toast("Multa excluída.","danger");setCfm(null);}});
   const total=fines.reduce((a,x)=>a+x.valor,0);
   return<div>
     <SH title="Controle de Multas" sub={`${fines.length} multa(s) — R$ ${total.toFixed(2)} total`} action={<Btn Ic={Plus} click={()=>setShow(!show)}>+ Registrar Multa</Btn>}/>
@@ -968,17 +971,22 @@ function Fines({vehicles,fines,setFines,toast}){
           <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Data"/><Th ch="Infração"/><Th ch="Valor"/><Th ch="Status"/><Th ch="Ações"/></tr></thead>
           <tbody>{fines.map((m,i)=><tr key={m.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{m.id}</span>}/>
-            <Td ch={<span style={{fontWeight:600,color:NAV_BG}}>{m.placa}</span>}/><Td ch={<span style={{fontSize:12}}>{m.mot}</span>}/><Td ch={<span style={{fontSize:12,whiteSpace:"nowrap"}}>{m.data}</span>}/>
+            <Td ch={<span style={{fontWeight:600,color:NAV_BG}}>{m.placa}</span>}/>
+            <Td ch={<span style={{fontSize:12}}>{m.mot}</span>}/>
+            <Td ch={<span style={{fontSize:12,whiteSpace:"nowrap"}}>{m.data}</span>}/>
             <Td ch={<span style={{fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"block"}}>{m.inf}</span>}/>
             <Td ch={<span style={{fontWeight:700,color:"#dc2626",whiteSpace:"nowrap"}}>R$ {m.valor.toFixed(2)}</span>}/>
             <Td ch={<SBdg v={m.status}/>}/>
-            <Td ch={<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{m.status==="Pendente"&&<><Btn sm click={()=>pagar(m.id)}>Pagar</Btn><Btn ghost sm click={()=>recurso(m.id)}>Recurso</Btn></>}<button onClick={()=>setCfm({msg:`Excluir multa ${m.id}?`,ok:()=>{setFines(fines.filter(x=>x.id!==m.id));toast("Multa excluída.","danger");setCfm(null);}})} style={{background:"none",border:"none",padding:"3px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button></div>}/>
+            <Td ch={<div style={{display:"flex",gap:4,alignItems:"center"}}>
+              {m.status==="Pendente"&&<><Btn sm click={()=>pagar(m.id)}>Pagar</Btn><Btn ghost sm click={()=>recurso(m.id)}>Recurso</Btn></>}
+              <button onClick={()=>excluir(m)} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>
+            </div>}/>
           </tr>)}</tbody>
         </table>
       </div>
     }
+    {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;
-  {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
 }
 
 

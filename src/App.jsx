@@ -1100,8 +1100,8 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
 
   return<div>
     <SH title="Vistoria Veicular" sub={`${vistorias.length} vistoria(s) registrada(s)`}/>
-    <div className="g2">
-      <div style={{background:"var(--card)",border:`1px solid ${editando?"#d97706":"var(--bd)"}`,borderTop:`3px solid ${editando?"#d97706":P}`,padding:16,maxHeight:"80vh",overflowY:"auto"}}>
+    <div style={{display:"grid",gridTemplateColumns:"minmax(320px,420px) 1fr",gap:12,marginBottom:12,alignItems:"start"}}>
+      <div style={{background:"var(--card)",border:`1px solid ${editando?"#d97706":"var(--bd)"}`,borderTop:`3px solid ${editando?"#d97706":P}`,padding:16,overflowY:"auto",maxHeight:"85vh"}}>
         <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>{editando?"✏ Editando Vistoria":"Nova Vistoria Veicular"}</p>
         <div className="gf2" style={{marginBottom:12}}>
           <FF lb="Veículo" val={placa} set={setPlaca} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)}/>

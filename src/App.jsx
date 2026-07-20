@@ -563,7 +563,7 @@ function Vehicles({vehicles,setVehicles,toast}){
     }
     
     {sel&&<VeiculoDetalhe v={sel} onEdit={()=>{setModal(sel);setSel(null);}} onClose={()=>setSel(null)}/>}
-      
+
     {(modal==="add"||modal?.id)&&<VModal v={modal==="add"?null:modal} save={saveV} close={()=>setModal(null)} toast={toast}/>}
     {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;
@@ -1027,7 +1027,18 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
   const[estadoCons,setEstadoCons]=useState("Bom");
   const[foto,setFoto]=useState(null);
   const[sel,setSel]=useState(null);
+  const[editando,setEditando]=useState(null);
+  const[cfm,setCfm]=useState(null);
   const totalOk=Object.values(ck).filter(Boolean).length;
+
+  const limpar=()=>{setPlaca("");setMot("");setCk({});setObs("");setKm("");setEstadoCons("Bom");setFoto(null);setEditando(null);};
+
+  const abrirEdicao=h=>{
+    setPlaca(h.placa);setMot(h.mot);setObs(h.obs||"");setKm(h.km||"");
+    setEstadoCons(h.estadoCons||"Bom");setFoto(h.foto||null);
+    setCk(Object.fromEntries(TODOS.map(it=>[it,h.itensMarcados?.includes(it)||false])));
+    setEditando(h.id);setSel(null);
+  };
 
   const enviar=()=>{
     if(!placa||!mot){toast("Selecione o veículo e o motorista.","danger");return;}

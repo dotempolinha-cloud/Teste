@@ -435,7 +435,7 @@ function Login({onLogin,sysUsers}){
     },700);
   };
   const inp={width:"100%",border:"1px solid #d1d5db",padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box"};
-  return<div style={{minHeight:"100vh",background:"linear-gradient(140deg,#0c1a47 0%,#1d4ed8 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+  return<div style={{width:"100vw",minHeight:"100vh",background:"linear-gradient(140deg,#0c1a47 0%,#1d4ed8 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
     <div style={{display:"flex",width:"100%",maxWidth:880,background:"white",boxShadow:"0 28px 80px rgba(0,0,0,.4)",flexWrap:"wrap"}}>
       <div style={{flex:"1 1 260px",background:"#0c1a47",padding:"40px 32px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:380}}>
         <div>

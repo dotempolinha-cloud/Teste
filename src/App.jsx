@@ -536,13 +536,30 @@ function Vehicles({vehicles,setVehicles,toast}){
         </table>
       </div>
     }
-    {sel&&<Modal title={`${sel.placa} — ${sel.modelo}`} close={()=>setSel(null)} w={780}>
-      {sel.foto&&<div style={{width:"100%",height:200,background:`url(${sel.foto})`,backgroundSize:"cover",backgroundPosition:"center",marginBottom:16,border:"1px solid var(--bd)"}}/>}
-      <div className="g2"><div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Dados Técnicos</p>{[["Placa",sel.placa],["RENAVAM",sel.renavam||"—"],["Chassi",sel.chassi||"—"],["Modelo",`${sel.marca} ${sel.modelo}`],["Ano / Cor",`${sel.ano||"—"} · ${sel.cor||"—"}`],["Tipo",`${sel.tipo} — ${sel.cat}`],["Combustível",sel.comb]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div>
-      <div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Situação Atual</p>{[["Secretaria",sel.sec],["Patrimônio",sel.pat||"—"],["Motorista",sel.mot||"—"],["KM Atual",sel.km>0?sel.km.toLocaleString("pt-BR")+" km":"Horímetro"],["Nível Comb.",sel.niv+"%"],["Próx. Revisão",sel.rev||"—"],["Val. Seguro",sel.seg||"—"],["Multas",(sel.mul||0)+" multa(s)"],["Custo Acumulado","R$ "+(sel.custo||0)]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div></div>
-      {sel.obs&&<div style={{background:"var(--ra)",border:"1px solid var(--bd)",padding:"10px 14px",marginTop:14}}><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 4px"}}>Observações</p><p style={{fontSize:13,color:"var(--sub)",margin:0}}>{sel.obs}</p></div>}
-      <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn Ic={Edit} click={()=>{setModal(sel);setSel(null);}}>Editar Veículo</Btn><Btn ghost click={()=>setSel(null)}>Fechar</Btn></div>
-    </Modal>}
+    {sel&&(()=>{
+  const[lbSrc,setLbSrc]=useState(null);
+  const todasFotos=[...(sel.fotos||[]).map(f=>f.src),sel.foto].filter(Boolean);
+  return<Modal title={`${sel.placa} — ${sel.modelo}`} close={()=>setSel(null)} w={820}>
+    {/* Galeria de fotos */}
+    {todasFotos.length>0&&<div style={{marginBottom:16}}>
+      <img src={todasFotos[0]} alt="foto principal" onClick={()=>setLbSrc(todasFotos[0])} style={{width:"100%",maxHeight:260,objectFit:"contain",background:"#f1f5f9",border:"1px solid var(--bd)",cursor:"zoom-in",display:"block",marginBottom:8}}/>
+      {todasFotos.length>1&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {todasFotos.slice(1).map((src,i)=><img key={i} src={src} alt={`foto ${i+2}`} onClick={()=>setLbSrc(src)} style={{width:80,height:60,objectFit:"contain",border:"1px solid var(--ibd)",background:"var(--ra)",cursor:"zoom-in"}}/>)}
+      </div>}
+      {sel.fotoDoc&&<div style={{marginTop:8,display:"flex",alignItems:"center",gap:8}}>
+        <img src={sel.fotoDoc} alt="CRLV" onClick={()=>setLbSrc(sel.fotoDoc)} style={{width:80,height:60,objectFit:"contain",border:"1px solid var(--ibd)",background:"var(--ra)",cursor:"zoom-in"}}/>
+        <span style={{fontSize:11,color:"var(--mu)"}}>Documento / CRLV</span>
+      </div>}
+    </div>}
+    <div className="g2">
+      <div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Dados Técnicos</p>{[["Placa",sel.placa],["RENAVAM",sel.renavam||"—"],["Chassi",sel.chassi||"—"],["Modelo",`${sel.marca} ${sel.modelo}`],["Ano / Cor",`${sel.ano||"—"} · ${sel.cor||"—"}`],["Tipo",`${sel.tipo} — ${sel.cat}`],["Combustível",sel.comb]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div>
+      <div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Situação Atual</p>{[["Secretaria",sel.sec],["Patrimônio",sel.pat||"—"],["Motorista",sel.mot||"—"],["KM Atual",sel.km>0?sel.km.toLocaleString("pt-BR")+" km":"Horímetro"],["Conservação",sel.estadoCons||"—"],["Próx. Revisão",sel.rev||"—"],["Val. Seguro",sel.seg||"—"],["Multas",(sel.mul||0)+" multa(s)"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div>
+    </div>
+    {sel.obs&&<div style={{background:"var(--ra)",border:"1px solid var(--bd)",padding:"10px 14px",marginTop:14}}><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 4px"}}>Observações</p><p style={{fontSize:13,color:"var(--sub)",margin:0}}>{sel.obs}</p></div>}
+    <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn Ic={Edit} click={()=>{setModal(sel);setSel(null);}}>Editar Veículo</Btn><Btn ghost click={()=>setSel(null)}>Fechar</Btn></div>
+    {lbSrc&&<Lightbox src={lbSrc} close={()=>setLbSrc(null)}/>}
+  </Modal>;
+})()}
     {(modal==="add"||modal?.id)&&<VModal v={modal==="add"?null:modal} save={saveV} close={()=>setModal(null)} toast={toast}/>}
     {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;

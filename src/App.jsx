@@ -267,7 +267,20 @@ function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
     if(!file.type.startsWith("image/")){toast("Selecione uma imagem válida.","danger");return;}
     if(file.size>3*1024*1024){toast("Imagem muito grande. Máximo 3MB.","danger");return;}
     const reader=new FileReader();
-    reader.onload=ev=>setPhoto(ev.target.result);
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement("canvas");
+        const MAX=800;
+        let w=img.width,h=img.height;
+        if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+        if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        setPhoto(canvas.toDataURL("image/jpeg",0.72));
+      };
+      img.src=ev.target.result;
+    };
     reader.readAsDataURL(file);
   };
   return<div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -307,7 +320,20 @@ function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
       if(!file.type.startsWith("image/")){toast("Apenas imagens.","danger");return;}
       if(file.size>3*1024*1024){toast(`${file.name} muito grande (máx 3MB).`,"danger");return;}
       const reader=new FileReader();
-      reader.onload=ev=>setFotos(p=>[...p,{id:Date.now()+Math.random(),src:ev.target.result,nome:file.name}]);
+      reader.onload=ev=>{
+        const img=new Image();
+        img.onload=()=>{
+          const canvas=document.createElement("canvas");
+          const MAX=800;
+          let w=img.width,h=img.height;
+          if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+          if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+          canvas.width=w;canvas.height=h;
+          canvas.getContext("2d").drawImage(img,0,0,w,h);
+          setFotos(p=>[...p,{id:Date.now()+Math.random(),src:canvas.toDataURL("image/jpeg",0.72),nome:file.name}]);
+        };
+        img.src=ev.target.result;
+      };
       reader.readAsDataURL(file);
     });
     e.target.value="";

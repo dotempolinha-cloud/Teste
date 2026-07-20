@@ -255,7 +255,7 @@ function Lightbox({src,close}){
   </div>;
 }
 
-/* ═══ FOTO DO VEÍCULO — Upload com preview, salvo como Base64 ═══ */
+
 /* ═══ UPLOAD DE FOTO ÚNICA ═══ */
 function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
   const inputRef=useRef(null);

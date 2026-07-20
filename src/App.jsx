@@ -1046,18 +1046,16 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
     const itensMarcados=Object.entries(ck).filter(([,v])=>v).map(([k])=>k);
     const itensFaltando=TODOS.filter(i=>!ck[i]);
     const res=ok===TODOS.length?"Aprovado":ok>=Math.floor(TODOS.length*0.8)?"Aprovado c/ ressalvas":"Reprovado";
-    const id=`VST-${Date.now().toString().slice(-8)}`;
-    const nova={
-      id,placa,mot,
-      data:new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),
-      ok,total:TODOS.length,res,obs,km:+km||0,estadoCons,foto,
-      itensMarcados,itensFaltando,
-    };
-    setVistorias(p=>[nova,...p]);
-    // Atualiza estado de conservação no veículo automaticamente
+    if(editando){
+      setVistorias(p=>p.map(v=>v.id===editando?{...v,placa,mot,obs,km:+km||0,estadoCons,foto,ok,total:TODOS.length,res,itensMarcados,itensFaltando}:v));
+      toast("✓ Vistoria atualizada com sucesso!");
+    } else {
+      const id=`VST-${Date.now().toString().slice(-8)}`;
+      setVistorias(p=>[{id,placa,mot,data:new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),ok,total:TODOS.length,res,obs,km:+km||0,estadoCons,foto,itensMarcados,itensFaltando},...p]);
+      toast(res==="Aprovado"?"✓ Vistoria aprovada!":res==="Aprovado c/ ressalvas"?"⚠ Aprovado c/ ressalvas.":"❌ Reprovado.","info");
+    }
     setVehicles(p=>p.map(v=>v.placa===placa?{...v,estadoCons,km:+km||v.km}:v));
-    setCk({});setObs("");setPlaca("");setMot("");setKm("");setEstadoCons("Bom");setFoto(null);
-    toast(res==="Aprovado"?"✓ Vistoria aprovada! Veículo liberado.":res==="Aprovado c/ ressalvas"?"⚠ Vistoria com ressalvas — verifique itens.":"❌ Vistoria reprovada — veículo não liberado.","info");
+    limpar();
   };
 
   const corEstado={Ótimo:"#16a34a",Bom:"#0284c7",Regular:"#d97706",Ruim:"#dc2626",Péssimo:"#7f1d1d"};

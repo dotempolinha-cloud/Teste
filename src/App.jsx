@@ -570,9 +570,19 @@ function Vehicles({vehicles,setVehicles,toast}){
       ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><Car size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhum veículo cadastrado</div><div style={{fontSize:13}}>Clique em "+ Cadastrar Veículo" para começar.</div></div>
       :<div className="tbl" style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead><tr><Th ch=""/><Th ch="Placa"/><Th ch="Veículo"/><Th ch="Secretaria"/><Th ch="KM"/><Th ch="Comb."/><Th ch="Conservação"/><Th ch="Status"/><Th ch=""/></tr></thead>
+          <thead><tr>
+            <Th ch="" st={{width:68,padding:"9px 8px"}}/>
+            <Th ch="Placa"/>
+            <Th ch="Veículo"/>
+            <Th ch="Secretaria"/>
+            <Th ch="KM"/>
+            <Th ch="Comb."/>
+            <Th ch="Conservação"/>
+            <Th ch="Status"/>
+            <Th ch=""/>
+          </tr></thead>
           <tbody>{filt.map((v,i)=><tr key={v.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
-            <Td ch={<div style={{width:56,height:42,flexShrink:0,border:"1px solid var(--bd)",background:"var(--ra)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:v.foto?"zoom-in":"default"}} onClick={()=>v.foto&&setSel(v)}>{v.foto?<img src={v.foto} alt={v.placa} style={{width:"100%",height:"100%",objectFit:"contain",display:"block"}}/>:<Car size={16} color="var(--mu)"/>}</div>}/>
+            <Td st={{padding:"8px",width:68}} ch={<div style={{width:56,height:42,flexShrink:0,border:"1px solid var(--bd)",background:"var(--ra)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:v.foto?"zoom-in":"default"}} onClick={()=>v.foto&&setSel(v)}>{v.foto?<img src={v.foto} alt={v.placa} style={{width:"100%",height:"100%",objectFit:"contain",display:"block"}}/>:<Car size={16} color="var(--mu)"/>}</div>}/>
             <Td ch={<span style={{fontWeight:700,color:NAV_BG,letterSpacing:".04em"}}>{v.placa}</span>}/>
             <Td ch={<div><div style={{fontWeight:600}}>{v.modelo}</div><div style={{fontSize:11,color:"var(--mu)"}}>{v.marca} · {v.ano} · {v.tipo}</div></div>}/>
             <Td ch={<div><div style={{fontSize:12}}>{v.sec}</div><div style={{fontSize:10,color:"var(--mu)"}}>{v.pat}</div></div>}/>

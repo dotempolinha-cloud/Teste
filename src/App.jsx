@@ -501,6 +501,30 @@ function Dashboard({nav,vehicles,drivers,alerts,fuel,maint}){
   </div>;
 }
 
+/* ═══ MODAL DE DETALHE DO VEÍCULO ═══ */
+function VeiculoDetalhe({v,onEdit,onClose}){
+  const[lbSrc,setLbSrc]=useState(null);
+  const todasFotos=[...(v.fotos||[]).map(f=>f.src),v.foto].filter(Boolean);
+  return<Modal title={`${v.placa} — ${v.modelo}`} close={onClose} w={820}>
+    {todasFotos.length>0&&<div style={{marginBottom:16}}>
+      <img src={todasFotos[0]} alt="foto" onClick={()=>setLbSrc(todasFotos[0])} style={{width:"100%",maxHeight:280,objectFit:"contain",background:"#f1f5f9",border:"1px solid var(--bd)",cursor:"zoom-in",display:"block",marginBottom:todasFotos.length>1?8:0}}/>
+      {todasFotos.length>1&&<div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>{todasFotos.slice(1).map((src,i)=><img key={i} src={src} alt={`foto ${i+2}`} onClick={()=>setLbSrc(src)} style={{width:80,height:60,objectFit:"contain",border:"1px solid var(--ibd)",background:"var(--ra)",cursor:"zoom-in"}}/>)}</div>}
+    </div>}
+    {v.fotoDoc&&<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"8px 10px",background:"var(--ra)",border:"1px solid var(--bd)"}}>
+      <img src={v.fotoDoc} alt="CRLV" onClick={()=>setLbSrc(v.fotoDoc)} style={{width:72,height:54,objectFit:"contain",border:"1px solid var(--ibd)",background:"white",cursor:"zoom-in",flexShrink:0}}/>
+      <span style={{fontSize:12,color:"var(--mu)"}}>Documento / CRLV — clique para ampliar</span>
+    </div>}
+    {todasFotos.length===0&&!v.fotoDoc&&<div style={{background:"var(--ra)",border:"1px solid var(--bd)",padding:"14px",textAlign:"center",marginBottom:14,color:"var(--mu)",fontSize:12}}>Sem fotos cadastradas. Clique em "Editar Veículo" para adicionar.</div>}
+    <div className="g2">
+      <div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Dados Técnicos</p>{[["Placa",v.placa],["RENAVAM",v.renavam||"—"],["Chassi",v.chassi||"—"],["Modelo",`${v.marca} ${v.modelo}`],["Ano / Cor",`${v.ano||"—"} · ${v.cor||"—"}`],["Tipo",`${v.tipo} — ${v.cat}`],["Combustível",v.comb]].map(([l,val])=><DR key={l} l={l} v={val}/>)}</div>
+      <div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Situação Atual</p>{[["Secretaria",v.sec],["Patrimônio",v.pat||"—"],["Motorista",v.mot||"—"],["KM Atual",v.km>0?v.km.toLocaleString("pt-BR")+" km":"Horímetro"],["Conservação",v.estadoCons||"—"],["Nível Comb.",v.niv+"%"],["Próx. Revisão",v.rev||"—"],["Val. Seguro",v.seg||"—"],["Multas",(v.mul||0)+" multa(s)"]].map(([l,val])=><DR key={l} l={l} v={val}/>)}</div>
+    </div>
+    {v.obs&&<div style={{background:"var(--ra)",border:"1px solid var(--bd)",padding:"10px 14px",marginTop:14}}><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 4px"}}>Observações</p><p style={{fontSize:13,color:"var(--sub)",margin:0}}>{v.obs}</p></div>}
+    <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn Ic={Edit} click={onEdit}>Editar Veículo</Btn><Btn ghost click={onClose}>Fechar</Btn></div>
+    {lbSrc&&<Lightbox src={lbSrc} close={()=>setLbSrc(null)}/>}
+  </Modal>;
+}
+
 /* ═══ VEHICLES — com foto ═══ */
 function Vehicles({vehicles,setVehicles,toast}){
   const[tab,setTab]=useState("Todos");const[srch,setSrch]=useState("");

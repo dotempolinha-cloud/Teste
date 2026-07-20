@@ -1073,8 +1073,8 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
   return<div>
     <SH title="Vistoria Veicular" sub={`${vistorias.length} vistoria(s) registrada(s)`}/>
     <div className="g2">
-      <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:16,maxHeight:"80vh",overflowY:"auto"}}>
-        <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>Nova Vistoria Veicular</p>
+      <div style={{background:"var(--card)",border:`1px solid ${editando?"#d97706":"var(--bd)"}`,borderTop:`3px solid ${editando?"#d97706":P}`,padding:16,maxHeight:"80vh",overflowY:"auto"}}>
+        <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>{editando?"✏ Editando Vistoria":"Nova Vistoria Veicular"}</p>
         <div className="gf2" style={{marginBottom:12}}>
           <FF lb="Veículo" val={placa} set={setPlaca} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)}/>
           <FF lb="Motorista / Vistoriador" val={mot} set={setMot} opts={drivers.filter(d=>d.sit==="Ativo").map(d=>d.nome)}/>
@@ -1094,7 +1094,10 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
         <SecaoItens titulo="Elétrica e Iluminação" itens={ITENS_ELETRICA}/>
         <SecaoItens titulo="Segurança e Documentação" itens={ITENS_SEGURANCA}/>
         <div style={{marginBottom:12}}><label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>Observações e Pendências</label><textarea value={obs} onChange={e=>setObs(e.target.value)} rows={2} style={{width:"100%",border:"1px solid var(--ibd)",padding:"8px 10px",fontSize:13,fontFamily:"inherit",resize:"vertical",background:"var(--inp)",color:"var(--tx)"}}/></div>
-        <Btn click={enviar} full>{`Finalizar Vistoria (${totalOk}/${TODOS.length} ✓)`}</Btn>
+        <div style={{display:"flex",gap:10}}>
+          <Btn click={enviar} full={!editando}>{editando?`Salvar Edição (${totalOk}/${TODOS.length} ✓)`:`Finalizar Vistoria (${totalOk}/${TODOS.length} ✓)`}</Btn>
+          {editando&&<Btn ghost click={limpar}>Cancelar</Btn>}
+        </div>
       </div>
 
       <div style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
@@ -1111,7 +1114,11 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
               <Td ch={<span style={{fontSize:12,fontWeight:600,color:corEstado[h.estadoCons]||"var(--tx)"}}>{h.estadoCons||"—"}</span>}/>
               <Td ch={<span style={{fontSize:12,fontWeight:600}}>{h.ok}/{h.total}</span>}/>
               <Td ch={<Bdg lb={h.res} tp={h.res==="Aprovado"?"ok":h.res.includes("ressalvas")?"warn":"bad"}/>}/>
-              <Td ch={<div style={{display:"flex",gap:4}}><button onClick={()=>setSel(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button><button onClick={()=>setVistorias(p=>p.filter(x=>x.id!==h.id))&&toast("Vistoria removida.","danger")||setVistorias(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",padding:"3px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button></div>}/>
+              <Td ch={<div style={{display:"flex",gap:4}}>
+                <button onClick={()=>setSel(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button>
+                <button onClick={()=>abrirEdicao(h)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:P,fontFamily:"inherit"}}><Edit size={11}/></button>
+                <button onClick={()=>setCfm({msg:`Excluir vistoria ${h.id}?`,ok:()=>{setVistorias(p=>p.filter(x=>x.id!==h.id));toast("Vistoria excluída.","danger");setCfm(null);}})} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={13}/></button>
+              </div>}/>
             </tr>)}
             </tbody>
           </table></div>
@@ -1120,7 +1127,7 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
     </div>
 
     {sel&&<Modal title={`Vistoria ${sel.id} — ${sel.placa}`} close={()=>setSel(null)} w={700}>
-      {sel.foto&&<div style={{width:"100%",height:180,background:`url(${sel.foto})`,backgroundSize:"cover",backgroundPosition:"center",marginBottom:14,border:"1px solid var(--bd)"}}/>}
+      {sel.foto&&<img src={sel.foto} alt="vistoria" style={{width:"100%",maxHeight:200,objectFit:"contain",background:"#f1f5f9",border:"1px solid var(--bd)",marginBottom:14,display:"block"}}/>}
       <div className="g2">
         <div>{[["Veículo",sel.placa],["Motorista",sel.mot],["Data",sel.data],["KM",sel.km>0?sel.km.toLocaleString("pt-BR")+" km":"—"],["Conservação",sel.estadoCons||"—"],["Itens OK",`${sel.ok}/${sel.total}`],["Resultado",sel.res]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div>
         <div>
@@ -1128,8 +1135,12 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
           {sel.obs&&<div style={{marginTop:10,background:"var(--ra)",border:"1px solid var(--bd)",padding:"8px 12px"}}><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",marginBottom:4}}>Observações</p><p style={{fontSize:12,color:"var(--sub)"}}>{sel.obs}</p></div>}
         </div>
       </div>
-      <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn ghost click={()=>setSel(null)}>Fechar</Btn></div>
+      <div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}>
+        <Btn Ic={Edit} click={()=>abrirEdicao(sel)}>Editar esta Vistoria</Btn>
+        <Btn ghost click={()=>setSel(null)}>Fechar</Btn>
+      </div>
     </Modal>}
+    {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;
 }
 

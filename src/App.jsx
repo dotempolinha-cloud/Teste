@@ -23,12 +23,14 @@ import {
 ═══════════════════════════════════════════════════════ */
 const CSS = `
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;min-height:100vh;overflow-x:hidden;}
+html,body{width:100%;height:100%;min-height:100vh;overflow-x:hidden;background:#0c1a47;}
+#root{width:100%;min-height:100vh;}
 .sga{
   --bg:#f0f4f8;--card:#fff;--bd:#e2e8f0;--tx:#0f172a;--sub:#374151;--mu:#64748b;
   --th:#f8fafc;--ra:#f9fafb;--hv:#eff6ff;--inp:#fff;--ibd:#d1d5db;
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
   width:100%;min-height:100vh;background:var(--bg);
+  position:relative;
 }
 .sga.dark{
   --bg:#0c1828;--card:#102038;--bd:#1a3050;--tx:#f1f5f9;--sub:#cbd5e1;--mu:#7090b8;

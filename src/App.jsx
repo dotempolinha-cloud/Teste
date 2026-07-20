@@ -1128,7 +1128,7 @@ function Checklist({vehicles,setVehicles,drivers,vistorias,setVistorias,toast}){
         </div>
       </div>
 
-      <div style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
+      <div style={{background:"var(--card)",border:"1px solid var(--bd)",minWidth:0}}>
         <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)"}}><span style={{fontWeight:700,fontSize:14,color:"var(--tx)"}}>Histórico de Vistorias</span></div>
         {vistorias.length===0
           ?<div style={{padding:"32px",textAlign:"center",color:"var(--mu)",fontSize:13}}>Nenhuma vistoria registrada ainda.</div>

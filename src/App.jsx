@@ -1258,7 +1258,7 @@ function Settings({toast,currentUser,sysUsers,setSysUsers}){
         </div>}
         {tab==="sistema"&&<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:20}}>
           <div style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginBottom:16}}>Informações do Sistema</div>
-          {[["Versão","SGA Frota Municipal — Versão de Produção"],["Usuário atual",`${currentUser?.nome} (${currentUser?.perfil})`],["Nível de acesso",currentUser?.role?.toUpperCase()],["Total de usuários",sysUsers.length+" cadastrado(s)"],["Armazenamento","Local (dados salvos automaticamente)"],["Política de dados","LGPD — Lei nº 13.709/2018"],["Desenvolvido para","Prefeitura Municipal de Upanema — RN"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}
+          {[["Versão","SGA Frota Municipal — Versão de Produção"],["Usuário atual",`${currentUser?.nome} (${currentUser?.perfil})`],["Nível de acesso",currentUser?.role?.toUpperCase()],["Total de usuários",sysUsers.length+" cadastrado(s)"],["Armazenamento","Local (dados salvos automaticamente)"],["Política de dados","LGPD — Lei nº 13.709/2018"],["Desenvolvido para","Prefeitura Municipal de Upanema — RN Feito por Luelson dos Santos Felix - Todos os direitos Reservados 2026"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}
         </div>}
       </div>
     </div>

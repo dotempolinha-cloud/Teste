@@ -1293,6 +1293,128 @@ function Suppliers({suppliers,setSuppliers,toast}){
   </div>;
 }
 
+/* ═══ BACKUP & RECUPERAÇÃO ═══ */
+function BackupPanel({vehicles,drivers,trips,fuel,maint,fines,suppliers,vistorias,setVehicles,setDrivers,setTrips,setFuel,setMaint,setFines,setSuppliers,setVistorias,toast}){
+  const[importando,setImportando]=useState(false);
+  const[cfm,setCfm]=useState(null);
+  const inputRef=useRef(null);
+
+  const exportar=()=>{
+    const backup={
+      versao:"1.0",
+      data:new Date().toISOString(),
+      sistema:"SGA Frota Municipal — Upanema RN",
+      dados:{vehicles,drivers,trips,fuel,maint,fines,suppliers,vistorias},
+    };
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=`sga_backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast("✓ Backup exportado com sucesso! Guarde o arquivo em local seguro.");
+  };
+
+  const importar=e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    if(!file.name.endsWith(".json")){toast("Selecione um arquivo .json de backup.","danger");return;}
+    setImportando(true);
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const backup=JSON.parse(ev.target.result);
+        if(!backup.dados){toast("Arquivo de backup inválido.","danger");setImportando(false);return;}
+        setCfm({
+          dados:backup.dados,
+          data:backup.data,
+          msg:`Restaurar backup de ${new Date(backup.data).toLocaleString("pt-BR")}? Isso irá substituir TODOS os dados atuais do sistema. Esta ação não pode ser desfeita.`,
+        });
+      }catch{
+        toast("Erro ao ler o arquivo. Verifique se é um backup válido.","danger");
+      }
+      setImportando(false);
+      e.target.value="";
+    };
+    reader.readAsText(file);
+  };
+
+  const restaurar=dados=>{
+    if(dados.vehicles)setVehicles(dados.vehicles);
+    if(dados.drivers)setDrivers(dados.drivers);
+    if(dados.trips)setTrips(dados.trips);
+    if(dados.fuel)setFuel(dados.fuel);
+    if(dados.maint)setMaint(dados.maint);
+    if(dados.fines)setFines(dados.fines);
+    if(dados.suppliers)setSuppliers(dados.suppliers);
+    if(dados.vistorias)setVistorias(dados.vistorias);
+    toast("✓ Backup restaurado com sucesso! Todos os dados foram recuperados.","info");
+    setCfm(null);
+  };
+
+  const totais=[
+    ["Veículos",vehicles.length,Car],
+    ["Motoristas",drivers.length,Users],
+    ["Viagens",trips.length,MapPin],
+    ["Abastecimentos",fuel.length,Fuel],
+    ["Manutenções",maint.length,Wrench],
+    ["Multas",fines.length,AlertOctagon],
+    ["Fornecedores",suppliers.length,Building2],
+    ["Vistorias",vistorias.length,CheckSquare],
+  ];
+
+  return<div>
+    <div style={{background:"#dcfce7",border:"1px solid #86efac",padding:"12px 16px",marginBottom:16,display:"flex",gap:10,alignItems:"center"}}>
+      <CheckCircle size={16} color="#15803d"/>
+      <span style={{fontSize:13,color:"#15803d",fontWeight:600}}>O backup exporta TODOS os dados do sistema em um arquivo .json. Guarde em local seguro (pendrive, Google Drive, e-mail).</span>
+    </div>
+
+    <div className="g2" style={{marginBottom:16}}>
+      {/* EXPORTAR */}
+      <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <div style={{width:36,height:36,background:"#eff6ff",display:"flex",alignItems:"center",justifyContent:"center"}}><Download size={18} color={P}/></div>
+          <div><div style={{fontSize:14,fontWeight:700,color:"var(--tx)"}}>Exportar Backup</div><div style={{fontSize:12,color:"var(--mu)"}}>Salva todos os dados em arquivo .json</div></div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {totais.map(([lb,n,I])=><div key={lb} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid var(--bd)",fontSize:13}}>
+            <span style={{color:"var(--mu)",display:"flex",alignItems:"center",gap:6}}><I size={12}/>{lb}</span>
+            <span style={{fontWeight:700,color:"var(--tx)"}}>{n} registro(s)</span>
+          </div>)}
+        </div>
+        <Btn Ic={Download} click={exportar} full>Exportar Backup Agora</Btn>
+        <p style={{fontSize:11,color:"var(--mu)",marginTop:8,textAlign:"center"}}>Arquivo: sga_backup_{new Date().toISOString().slice(0,10)}.json</p>
+      </div>
+
+      {/* IMPORTAR */}
+      <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <div style={{width:36,height:36,background:"#fef9c3",display:"flex",alignItems:"center",justifyContent:"center"}}><RefreshCw size={18} color="#a16207"/></div>
+          <div><div style={{fontSize:14,fontWeight:700,color:"var(--tx)"}}>Restaurar Backup</div><div style={{fontSize:12,color:"var(--mu)"}}>Recupera dados de um arquivo .json</div></div>
+        </div>
+        <div style={{background:"#fef9c3",border:"1px solid #fde047",padding:"10px 12px",marginBottom:16,fontSize:12,color:"#a16207",lineHeight:1.6}}>
+          ⚠ <strong>Atenção:</strong> restaurar um backup irá substituir TODOS os dados atuais. Faça um backup dos dados atuais antes de restaurar.
+        </div>
+        <Btn Ic={RefreshCw} click={()=>inputRef.current?.click()} full dis={importando}>{importando?"Lendo arquivo...":"Selecionar Arquivo de Backup"}</Btn>
+        <input ref={inputRef} type="file" accept=".json" onChange={importar} style={{display:"none"}}/>
+        <p style={{fontSize:11,color:"var(--mu)",marginTop:8,textAlign:"center"}}>Selecione um arquivo .json exportado por este sistema</p>
+      </div>
+    </div>
+
+    {cfm&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div className="fu" style={{background:"var(--card)",width:"100%",maxWidth:460,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,.4)"}}>
+        <div style={{display:"flex",gap:12,marginBottom:16}}><AlertTriangle size={22} color="#d97706" style={{flexShrink:0,marginTop:2}}/><div><p style={{fontSize:15,fontWeight:700,color:"var(--tx)",marginBottom:4}}>Confirmar Restauração</p><p style={{fontSize:13,color:"var(--mu)",lineHeight:1.6}}>{cfm.msg}</p></div></div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+          <Btn ghost click={()=>setCfm(null)}>Cancelar</Btn>
+          <Btn click={()=>restaurar(cfm.dados)}>Sim, Restaurar Backup</Btn>
+        </div>
+      </div>
+    </div>}
+  </div>;
+}
+
 /* ═══ SETTINGS — Controle de usuários por papel ═══ */
 function Settings({toast,currentUser,sysUsers,setSysUsers,vehicles,drivers,trips,fuel,maint,fines,suppliers,vistorias,setVehicles,setDrivers,setTrips,setFuel,setMaint,setFines,setSuppliers,setVistorias}){
   const isAdmin=currentUser?.role==="admin";

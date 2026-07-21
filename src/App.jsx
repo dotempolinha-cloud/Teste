@@ -572,13 +572,13 @@ function Vehicles({vehicles,setVehicles,toast}){
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
           <thead><tr>
             <Th ch="" st={{width:68,padding:"9px 8px"}}/>
-            <Th ch="Placa"/>
-            <Th ch="Veículo"/>
-            <Th ch="Secretaria"/>
-            <Th ch="KM"/>
-            <Th ch="Comb."/>
-            <Th ch="Conservação"/>
-            <Th ch="Status"/>
+            <Th ch="Placa" st={{textAlign:"center"}}/>
+            <Th ch="Veículo" st={{textAlign:"center"}}/>
+            <Th ch="Secretaria" st={{textAlign:"center"}}/>
+            <Th ch="KM" st={{textAlign:"center"}}/>
+            <Th ch="Comb." st={{textAlign:"center"}}/>
+            <Th ch="Conservação" st={{textAlign:"center"}}/>
+            <Th ch="Status" st={{textAlign:"center"}}/>
             <Th ch=""/>
           </tr></thead>
           <tbody>{filt.map((v,i)=><tr key={v.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>

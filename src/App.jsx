@@ -1294,7 +1294,7 @@ function Suppliers({suppliers,setSuppliers,toast}){
 }
 
 /* ═══ SETTINGS — Controle de usuários por papel ═══ */
-function Settings({toast,currentUser,sysUsers,setSysUsers}){
+function Settings({toast,currentUser,sysUsers,setSysUsers,vehicles,drivers,trips,fuel,maint,fines,suppliers,vistorias,setVehicles,setDrivers,setTrips,setFuel,setMaint,setFines,setSuppliers,setVistorias}){
   const isAdmin=currentUser?.role==="admin";
   const[tab,setTab]=useState("users");const[showForm,setShowForm]=useState(false);const[cfm,setCfm]=useState(null);
   const[nf,setNf]=useState({nome:"",email:"",pw:"",role:"motorista",sec:"Administração",perfil:""});

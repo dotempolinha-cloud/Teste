@@ -287,19 +287,22 @@ function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
     const file=e.target.files?.[0];
     if(!file)return;
     if(!file.type.startsWith("image/")){toast("Selecione uma imagem válida.","danger");return;}
-    if(file.size>3*1024*1024){toast("Imagem muito grande. Máximo 3MB.","danger");return;}
+    toast("Enviando foto...","info");
     const reader=new FileReader();
-    reader.onload=ev=>{
+    reader.onload=async ev=>{
       const img=new Image();
-      img.onload=()=>{
+      img.onload=async()=>{
         const canvas=document.createElement("canvas");
-        const MAX=800;
+        const MAX=1600;
         let w=img.width,h=img.height;
         if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
         if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
         canvas.width=w;canvas.height=h;
         canvas.getContext("2d").drawImage(img,0,0,w,h);
-        setPhoto(canvas.toDataURL("image/jpeg",0.72));
+        const base64=canvas.toDataURL("image/jpeg",0.88);
+        const url=await uploadCloudinary(base64);
+        if(url){setPhoto(url);toast("✓ Foto enviada com sucesso!");}
+        else{setPhoto(base64);toast("Foto salva localmente.","info");}
       };
       img.src=ev.target.result;
     };
@@ -340,19 +343,23 @@ function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
     if(sobra<=0){toast(`Máximo de ${max} fotos.`,"warning");return;}
     files.slice(0,sobra).forEach(file=>{
       if(!file.type.startsWith("image/")){toast("Apenas imagens.","danger");return;}
-      if(file.size>3*1024*1024){toast(`${file.name} muito grande (máx 3MB).`,"danger");return;}
+      toast("Enviando foto...","info");
       const reader=new FileReader();
-      reader.onload=ev=>{
+      reader.onload=async ev=>{
         const img=new Image();
-        img.onload=()=>{
+        img.onload=async()=>{
           const canvas=document.createElement("canvas");
-          const MAX=800;
+          const MAX=1600;
           let w=img.width,h=img.height;
           if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
           if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
           canvas.width=w;canvas.height=h;
           canvas.getContext("2d").drawImage(img,0,0,w,h);
-          setFotos(p=>[...p,{id:Date.now()+Math.random(),src:canvas.toDataURL("image/jpeg",0.72),nome:file.name}]);
+          const base64=canvas.toDataURL("image/jpeg",0.88);
+          const url=await uploadCloudinary(base64);
+          const src=url||base64;
+          setFotos(p=>[...p,{id:Date.now()+Math.random(),src,nome:file.name}]);
+          if(url)toast("✓ Foto enviada!");
         };
         img.src=ev.target.result;
       };

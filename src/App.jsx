@@ -406,7 +406,7 @@ function VModal({v,save,close,toast}){
     <div className="gf3"><FF lb="Chassi" val={f.chassi} set={u("chassi")}/><FF lb="Ano" val={f.ano} set={u("ano")} type="number"/><FF lb="Cor" val={f.cor} set={u("cor")}/></div>
     <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"14px 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Características</p>
     <div className="gf3">
-      <FF lb="Marca" val={f.marca} set={u("marca")} req opts={["Ford","Chevrolet","Volkswagen","Fiat","Mercedes-Benz","Toyota","Renault","Hyundai","John Deere","New Holland","Marcopolo","Outro"]}/>
+      <FF lb="Marca" val={f.marca} set={u("marca")} req opts={["BYD","Caoa Chery","Chevrolet","Citroën","Fiat","Ford","Honda","Hyundai","JAC","John Deere","Kia","Mahindra","Marcopolo","Mercedes-Benz","Mitsubishi","Nissan","New Holland","Peugeot","Renault","Rivian","Stellantis","Subaru","Toyota","Volkswagen","Volvo","Outro"]}/>
       <FF lb="Modelo" val={f.modelo} set={u("modelo")} req/>
       <FF lb="Tipo" val={f.tipo} set={u("tipo")} opts={["Passeio","Van","Picape","SUV","Ambulância","Ambulância UTI","Ônibus Escolar","Ônibus","Trator","Retroescavadeira","Caminhão","Utilitário","Moto"]}/>
       <FF lb="Categoria" val={f.cat} set={u("cat")} opts={["Administrativo","Serviço","Transporte","Emergência","Transp. Escolar","Máq. Pesada"]}/>

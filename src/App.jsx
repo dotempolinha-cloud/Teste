@@ -1359,8 +1359,16 @@ function Settings({toast,currentUser,sysUsers,setSysUsers}){
         </div>}
         {tab==="sistema"&&<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:20}}>
           <div style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginBottom:16}}>Informações do Sistema</div>
-          {[["Versão","SGA Frota Municipal — Versão de Produção"],["Usuário atual",`${currentUser?.nome} (${currentUser?.perfil})`],["Nível de acesso",currentUser?.role?.toUpperCase()],["Total de usuários",sysUsers.length+" cadastrado(s)"],["Armazenamento","Local (dados salvos automaticamente)"],["Política de dados","LGPD — Lei nº 13.709/2018"],["Desenvolvido para","Prefeitura Municipal de Upanema — RN Feito por Luelson dos Santos Felix - Todos os direitos Reservados 2026"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}
+          {[["Versão","SGA Frota Municipal — Versão de Produção"],["Usuário atual",`${currentUser?.nome} (${currentUser?.perfil})`],["Nível de acesso",currentUser?.role?.toUpperCase()],["Total de usuários",sysUsers.length+" cadastrado(s)"],["Armazenamento","Firebase Firestore + Cloudinary"],["Política de dados","LGPD — Lei nº 13.709/2018"],["Desenvolvido para","Prefeitura Municipal de Upanema — RN"],["Desenvolvido por","Luelson dos Santos Felix — Todos os direitos reservados 2026"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}
         </div>}
+        {tab==="backup"&&<BackupPanel
+          vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel}
+          maint={maint} fines={fines} suppliers={suppliers} vistorias={vistorias}
+          setVehicles={setVehicles} setDrivers={setDrivers} setTrips={setTrips}
+          setFuel={setFuel} setMaint={setMaint} setFines={setFines}
+          setSuppliers={setSuppliers} setVistorias={setVistorias}
+          toast={toast}
+        />}
       </div>
     </div>
     {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}

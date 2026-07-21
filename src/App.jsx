@@ -1524,7 +1524,7 @@ if(vs)setVistorias(vs);
     suppliers:<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} toast={toast}/>,
     alerts:<AlertsPage alerts={alerts} setAlerts={setAlerts} nav={goPage}/>,
     audit:<Audit log={log}/>,
-    settings:<Settings toast={toast} currentUser={currentUser} sysUsers={sysUsers} setSysUsers={setSysUsers}/>,
+    settings:<Settings toast={toast} currentUser={currentUser} sysUsers={sysUsers} setSysUsers={setSysUsers} vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel} maint={maint} fines={fines} suppliers={suppliers} vistorias={vistorias} setVehicles={setVehicles} setDrivers={setDrivers} setTrips={setTrips} setFuel={setFuel} setMaint={setMaint} setFines={setFines} setSuppliers={setSuppliers} setVistorias={setVistorias}/>,
   };
 
   /* Bloqueio de acesso direto: se a página atual não é permitida ao papel, força dashboard */

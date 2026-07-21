@@ -1309,7 +1309,7 @@ function Settings({toast,currentUser,sysUsers,setSysUsers}){
     toast("✓ Usuário cadastrado com sucesso! Ele já pode acessar com as permissões do perfil escolhido.");
   };
   const roleColor={admin:"#dc2626",gestor:"#d97706",secretario:"#0284c7",supervisor:"#16a34a",motorista:"#7c3aed",auditor:"#64748b"};
-  const menuItems=[["users","Usuários & Permissões",User],["sistema","Informações do Sistema",Shield]];
+  const menuItems=[["users","Usuários & Permissões",User],["sistema","Informações do Sistema",Shield],["backup","Backup & Recuperação",RefreshCw]];
   return<div>
     <SH title="Configurações do Sistema" sub="Usuários, permissões e parâmetros gerais"/>
     <div className="gcfg">

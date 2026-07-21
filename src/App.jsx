@@ -409,7 +409,7 @@ function VModal({v,save,close,toast}){
       <FF lb="Marca" val={f.marca} set={u("marca")} req opts={["BYD","Caoa Chery","Chevrolet","Citroën","Fiat","Ford","Honda","Hyundai","JAC","John Deere","Kia","Mahindra","Marcopolo","Mercedes-Benz","Mitsubishi","Nissan","New Holland","Peugeot","Renault","Rivian","Stellantis","Subaru","Toyota","Volkswagen","Volvo","Outro"]}/>
       <FF lb="Modelo" val={f.modelo} set={u("modelo")} req/>
       <FF lb="Tipo" val={f.tipo} set={u("tipo")} opts={["Passeio","SUV","Picape","Van","Sprinter","Kombi","Utilitário","Moto","Ambulância","Ambulância UTI","Ônibus","Ônibus Escolar","Micro-ônibus","Caminhão","Caminhão Pipa","Caminhonete","Trator","Retroescavadeira","Patrol","Motoniveladora","Caminhão Basculante","Elétrico","Elétrico SUV","Elétrico Van","Outro"]}/>
-      <FF lb="Categoria" val={f.cat} set={u("cat")} opts={["Administrativo","Serviço","Transporte","Emergência","Transp. Escolar","Máq. Pesada"]}/>
+      <FF lb="Categoria" val={f.cat} set={u("cat")} opts={["Administrativo","Serviço","Transporte","Emergência","Transp. Escolar","Máq. Pesada","Particular"]}/>
       <FF lb="Combustível" val={f.comb} set={u("comb")} opts={["Gasolina","Diesel S-10","Diesel Comum","Etanol","Flex","GNV","Elétrico"]}/>
       <FF lb="Secretaria" val={f.sec} set={u("sec")} opts={["Saúde","Obras","Educação","Administração","Assist. Social","Financeiro","Infraestrutura"]}/>
     </div>

@@ -583,14 +583,14 @@ function Vehicles({vehicles,setVehicles,toast}){
           </tr></thead>
           <tbody>{filt.map((v,i)=><tr key={v.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td st={{padding:"8px",width:68}} ch={<div style={{width:56,height:42,flexShrink:0,border:"1px solid var(--bd)",background:"var(--ra)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:v.foto?"zoom-in":"default"}} onClick={()=>v.foto&&setSel(v)}>{v.foto?<img src={v.foto} alt={v.placa} style={{width:"100%",height:"100%",objectFit:"contain",display:"block"}}/>:<Car size={16} color="var(--mu)"/>}</div>}/>
-            <Td ch={<span style={{fontWeight:700,color:NAV_BG,letterSpacing:".04em"}}>{v.placa}</span>}/>
-            <Td ch={<div><div style={{fontWeight:600}}>{v.modelo}</div><div style={{fontSize:11,color:"var(--mu)"}}>{v.marca} · {v.ano} · {v.tipo}</div></div>}/>
-            <Td ch={<div><div style={{fontSize:12}}>{v.sec}</div><div style={{fontSize:10,color:"var(--mu)"}}>{v.pat}</div></div>}/>
-            <Td ch={<span style={{fontWeight:500,whiteSpace:"nowrap"}}>{v.km>0?v.km.toLocaleString("pt-BR")+" km":"Horímetro"}</span>}/>
-            <Td ch={<Prog v={v.niv}/>}/>
-            <Td ch={<Bdg lb={v.estadoCons||"—"} tp={v.estadoCons==="Ótimo"||v.estadoCons==="Bom"?"ok":v.estadoCons==="Regular"?"warn":v.estadoCons==="Ruim"||v.estadoCons==="Péssimo"?"bad":"gray"}/>}/>
-            <Td ch={<SBdg v={v.sit}/>}/>
-            <Td ch={<div style={{display:"flex",gap:4}}>
+            <Td st={{textAlign:"center"}} ch={<span style={{fontWeight:700,color:NAV_BG,letterSpacing:".04em"}}>{v.placa}</span>}/>
+            <Td st={{textAlign:"center"}} ch={<div><div style={{fontWeight:600}}>{v.modelo}</div><div style={{fontSize:11,color:"var(--mu)"}}>{v.marca} · {v.ano} · {v.tipo}</div></div>}/>
+            <Td st={{textAlign:"center"}} ch={<div><div style={{fontSize:12}}>{v.sec}</div><div style={{fontSize:10,color:"var(--mu)"}}>{v.pat}</div></div>}/>
+            <Td st={{textAlign:"center"}} ch={<span style={{fontWeight:500,whiteSpace:"nowrap"}}>{v.km>0?v.km.toLocaleString("pt-BR")+" km":"Horímetro"}</span>}/>
+            <Td st={{textAlign:"center"}} ch={<Prog v={v.niv}/>}/>
+            <Td st={{textAlign:"center"}} ch={<Bdg lb={v.estadoCons||"—"} tp={v.estadoCons==="Ótimo"||v.estadoCons==="Bom"?"ok":v.estadoCons==="Regular"?"warn":v.estadoCons==="Ruim"||v.estadoCons==="Péssimo"?"bad":"gray"}/>}/>
+            <Td st={{textAlign:"center"}} ch={<SBdg v={v.sit}/>}/>
+            <Td st={{textAlign:"center"}} ch={<div style={{display:"flex",gap:4,justifyContent:"center"}}>
               <button onClick={()=>setSel(v)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:"#0284c7",fontFamily:"inherit",fontWeight:600}}>Ver</button>
               <button onClick={()=>setModal(v)} style={{background:"none",border:"1px solid var(--bd)",padding:"3px 7px",cursor:"pointer",fontSize:11,color:P,fontFamily:"inherit"}}><Edit size={11}/></button>
               <button onClick={()=>delV(v)} style={{background:"none",border:"none",padding:"3px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button>

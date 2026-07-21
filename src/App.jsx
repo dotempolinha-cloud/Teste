@@ -140,6 +140,26 @@ async set(key, value) {
 
 const NAV_BG="#0c1a47", P="#1d4ed8";
 
+/* ═══ CLOUDINARY ═══ */
+const CLOUD_NAME="c1vt96ia";
+const UPLOAD_PRESET="sga_upanema";
+
+async function uploadCloudinary(base64){
+  try{
+    const fd=new FormData();
+    fd.append("file",base64);
+    fd.append("upload_preset",UPLOAD_PRESET);
+    fd.append("folder","sga-frota");
+    const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,{method:"POST",body:fd});
+    const data=await res.json();
+    if(data.secure_url)return data.secure_url;
+    return null;
+  }catch(e){
+    console.error("Cloudinary erro:",e);
+    return null;
+  }
+}
+
 /* ═══ USUÁRIO ÚNICO INICIAL — Administrador Geral ═══ */
 const SYS_USERS_INIT=[
   {email:"gestão@gmail.com",pw:"gestão",nome:"Administrador Geral",role:"admin",perfil:"Administrador Geral",sec:"Gestão Municipal",mat:"PMU-ADMIN",ativo:true},

@@ -428,10 +428,13 @@ function VModal({v,save,close,toast}){
 }
 
 function DModal({d,save,close,toast}){
-  const blank={nome:"",cpf:"",rg:"",mat:"",nasc:"",tel:"",email:"",sec:"Administração",cargo:"Motorista",cnh:"B",valCnh:"",sit:"Ativo",viagens:0,kmR:0,veiAtual:null};
-  const[f,setF]=useState(d||blank);const u=k=>val=>setF(p=>({...p,[k]:val}));
+  const blank={nome:"",cpf:"",rg:"",mat:"",nasc:"",tel:"",email:"",sec:"Administração",cargo:"Motorista",cnh:"B",valCnh:"",sit:"Ativo",viagens:0,kmR:0,veiAtual:null,foto:null};
+  const[f,setF]=useState({...blank,...(d||{}),foto:d?.foto||null});const u=k=>val=>setF(p=>({...p,[k]:val}));
   const go=()=>{if(!f.nome||!f.cpf){toast("Preencha Nome e CPF.","danger");return;}save({...f,id:d?.id||`M${Date.now().toString().slice(-6)}`});toast(d?"Motorista atualizado!":"Motorista cadastrado!");close();};
   return<Modal title={d?`Editar — ${d.nome}`:"Cadastrar Motorista"} close={close} w={720}>
+    <div style={{marginBottom:16,display:"flex",gap:16,alignItems:"flex-start"}}>
+      <PhotoUpload photo={f.foto} setPhoto={u("foto")} toast={toast} lb="Foto do Motorista"/>
+    </div>
     <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Dados Pessoais</p>
     <div className="gf3"><FF lb="Nome Completo" val={f.nome} set={u("nome")} req/><FF lb="CPF" val={f.cpf} set={u("cpf")} req/><FF lb="RG" val={f.rg} set={u("rg")}/><FF lb="Matrícula" val={f.mat} set={u("mat")}/><FF lb="Telefone" val={f.tel} set={u("tel")}/><FF lb="E-mail" val={f.email} set={u("email")}/><FF lb="Nascimento" val={f.nasc} set={u("nasc")}/></div>
     <p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"14px 0 10px",paddingBottom:8,borderBottom:"1px solid var(--bd)"}}>Dados Profissionais</p>

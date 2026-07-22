@@ -715,7 +715,19 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
     {view==="form"&&<div style={{background:"var(--card)",border:"1px solid var(--bd)",borderTop:`3px solid ${P}`,padding:18,marginBottom:14}} className="fu">
       <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>Registrar Nova Saída de Veículo</p>
       {vehicles.filter(v=>v.sit==="Disponível").length===0&&<div style={{background:"#fef9c3",border:"1px solid #fde047",padding:"10px 12px",marginBottom:12,fontSize:13,color:"#a16207"}}>⚠ Nenhum veículo disponível no momento.</div>}
-      <div className="gf3"><FF lb="Veículo Disponível" val={f.placa} set={u("placa")} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)} req/><FF lb="Motorista" val={f.mot} set={u("mot")} opts={drivers.filter(d=>d.sit==="Ativo").map(d=>d.nome)} req/><FF lb="KM Inicial" val={f.kmi} set={u("kmi")} type="number"/></div>
+      <div className="gf3"><FF lb="Veículo Disponível" val={f.placa} set={u("placa")} opts={vehicles.filter(v=>v.sit==="Disponível").map(v=>v.placa)} req/><FF lb="Motorista" val={f.mot} set={u("mot")} opts={drivers.filter(d=>{
+  if(d.sit!=="Ativo")return false;
+  if(!d.valCnh||d.valCnh==="—")return true;
+  const[dd,mm,aa]=d.valCnh.split("/");
+  const venc=new Date(+aa,+mm-1,+dd);
+  return venc>=new Date();
+}).map(d=>{
+  const[dd,mm,aa]=(d.valCnh||"").split("/");
+  const venc=d.valCnh&&d.valCnh!=="—"?new Date(+aa,+mm-1,+dd):null;
+  const dias=venc?Math.round((venc-new Date())/86400000):null;
+  const aviso=dias!==null&&dias<=30?` ⚠ CNH vence em ${dias}d`:"";
+  return d.nome+aviso;
+})} req/><FF lb="KM Inicial" val={f.kmi} set={u("kmi")} type="number"/></div>
       <div className="gf3"><FF lb="Destino / Endereço" val={f.dest} set={u("dest")} req/><FF lb="Finalidade" val={f.fin} set={u("fin")} opts={["Transporte de Pacientes","Serviço de Obras","Transporte Escolar","Emergência Médica","Viagem Administrativa","Entrega de Materiais","Outros"]}/><FF lb="Secretaria Solicitante" val={f.sec} set={u("sec")} opts={["Saúde","Obras","Educação","Administração","Assist. Social"]}/></div>
       <div style={{display:"flex",gap:10}}><Btn Ic={Check} click={confirmar}>Confirmar Saída</Btn><Btn ghost click={()=>setView("lista")}>Cancelar</Btn></div>
     </div>}

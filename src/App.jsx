@@ -653,7 +653,7 @@ function Drivers({drivers,setDrivers,toast}){
       ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><Users size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhum motorista cadastrado</div><div style={{fontSize:13}}>Clique em "+ Cadastrar Motorista" para começar.</div></div>
       :<div className="tbl" style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead><tr><Th ch="Matrícula"/><Th ch="Nome / Cargo"/><Th ch="Secretaria"/><Th ch="Cat. CNH"/><Th ch="Validade CNH"/><Th ch="Veículo"/><Th ch="Viagens"/><Th ch="Status"/><Th ch=""/></tr></thead>
+          <thead><tr><Th ch="" st={{width:52}}/><Th ch="Matrícula"/><Th ch="Nome / Cargo"/><Th ch="Secretaria"/><Th ch="Cat. CNH"/><Th ch="Validade CNH"/><Th ch="Veículo"/><Th ch="Viagens"/><Th ch="Status"/><Th ch=""/></tr></thead>
           <tbody>{filt.map((d,i)=>{const dv=dias(d);const w=d.valCnh&&dv<90;return<tr key={d.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{d.mat||"—"}</span>}/>
             <Td ch={<div><div style={{fontWeight:600}}>{d.nome}</div><div style={{fontSize:11,color:"var(--mu)"}}>{d.cargo}</div></div>}/>

@@ -1622,6 +1622,99 @@ if(vs)setVistorias(vs);
   useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
   useEffect(()=>{if(ready)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
 
+/* ═══ ALERTAS AUTOMÁTICOS — roda ao carregar e quando veículos/motoristas mudam ═══ */
+  useEffect(()=>{
+    if(!ready||!vehicles.length&&!drivers.length)return;
+    const hoje=new Date();hoje.setHours(0,0,0,0);
+
+    const parseDt=str=>{
+      if(!str||str==="—")return null;
+      const p=str.split("/");
+      if(p.length===3)return new Date(+p[2],+p[1]-1,+p[0]);
+      return null;
+    };
+
+    const diasAte=str=>{
+      const d=parseDt(str);
+      if(!d)return null;
+      return Math.round((d-hoje)/86400000);
+    };
+
+    const novos=[];
+    let id=Date.now();
+
+    // ── VEÍCULOS ──
+    vehicles.forEach(v=>{
+      if(v.sit==="Baixado"||v.sit==="Leiloado")return;
+      const placa=v.placa;
+      const nome=`${v.placa} — ${v.modelo||v.marca}`;
+
+      // Seguro
+      const dSeg=diasAte(v.seg);
+      if(dSeg!==null){
+        if(dSeg<0) novos.push({id:id++,nivel:"danger",tipo:"Seguro Vencido",titulo:`Seguro VENCIDO — ${placa}`,desc:`${nome}: seguro venceu há ${Math.abs(dSeg)} dia(s). Veículo não deve circular.`,pg:"vehicles"});
+        else if(dSeg<=15) novos.push({id:id++,nivel:"danger",tipo:"Seguro",titulo:`Seguro vence em ${dSeg} dia(s) — ${placa}`,desc:`${nome}: seguro vence em ${v.seg}. Renove com urgência.`,pg:"vehicles"});
+        else if(dSeg<=30) novos.push({id:id++,nivel:"warning",tipo:"Seguro",titulo:`Seguro vence em ${dSeg} dias — ${placa}`,desc:`${nome}: seguro vence em ${v.seg}. Providencie a renovação.`,pg:"vehicles"});
+        else if(dSeg<=60) novos.push({id:id++,nivel:"info",tipo:"Seguro",titulo:`Seguro vence em ${dSeg} dias — ${placa}`,desc:`${nome}: seguro vence em ${v.seg}.`,pg:"vehicles"});
+      }
+
+      // Revisão / Licenciamento
+      const dRev=diasAte(v.rev);
+      if(dRev!==null){
+        if(dRev<0) novos.push({id:id++,nivel:"danger",tipo:"Revisão Vencida",titulo:`Revisão VENCIDA — ${placa}`,desc:`${nome}: revisão venceu há ${Math.abs(dRev)} dia(s).`,pg:"vehicles"});
+        else if(dRev<=15) novos.push({id:id++,nivel:"danger",tipo:"Revisão",titulo:`Revisão vence em ${dRev} dia(s) — ${placa}`,desc:`${nome}: revisão vence em ${v.rev}. Agende imediatamente.`,pg:"maintenance"});
+        else if(dRev<=30) novos.push({id:id++,nivel:"warning",tipo:"Revisão",titulo:`Revisão vence em ${dRev} dias — ${placa}`,desc:`${nome}: revisão vence em ${v.rev}.`,pg:"maintenance"});
+        else if(dRev<=60) novos.push({id:id++,nivel:"info",tipo:"Revisão",titulo:`Revisão vence em ${dRev} dias — ${placa}`,desc:`${nome}: revisão prevista para ${v.rev}.`,pg:"maintenance"});
+      }
+
+      // Combustível baixo
+      if(v.niv<=15&&v.sit!=="Manutenção") novos.push({id:id++,nivel:"warning",tipo:"Combustível",titulo:`Combustível baixo — ${placa}`,desc:`${nome}: nível de combustível em ${v.niv}%. Abastecer antes da próxima saída.`,pg:"fuel"});
+
+      // Multas pendentes
+      const multasPend=fines.filter(f=>f.placa===placa&&f.status==="Pendente");
+      if(multasPend.length>0) novos.push({id:id++,nivel:"warning",tipo:"Multas",titulo:`${multasPend.length} multa(s) pendente(s) — ${placa}`,desc:`${nome}: R$ ${multasPend.reduce((a,x)=>a+x.valor,0).toFixed(2)} em multas pendentes.`,pg:"fines"});
+
+      // Vistoria — mais de 30 dias sem vistoria
+      const vsVei=vistorias.filter(vs=>vs.placa===placa);
+      if(vsVei.length>0){
+        const ultima=vsVei[0];
+        const partsData=ultima.data?.split(" ")[0]?.split("/");
+        if(partsData?.length===3){
+          const dtUlt=new Date(+partsData[2],+partsData[1]-1,+partsData[0]);
+          const diasSemVist=Math.round((hoje-dtUlt)/86400000);
+          if(diasSemVist>30) novos.push({id:id++,nivel:"warning",tipo:"Vistoria",titulo:`Vistoria desatualizada — ${placa}`,desc:`${nome}: última vistoria há ${diasSemVist} dias. Recomendado a cada 30 dias.`,pg:"checklist"});
+        }
+      } else if(v.sit==="Disponível"||v.sit==="Em uso"){
+        novos.push({id:id++,nivel:"info",tipo:"Vistoria",titulo:`Sem vistoria cadastrada — ${placa}`,desc:`${nome}: nenhuma vistoria registrada. Realize a primeira inspeção.`,pg:"checklist"});
+      }
+    });
+
+    // ── MOTORISTAS ──
+    drivers.forEach(d=>{
+      if(d.sit==="Afastado")return;
+      const dCnh=diasAte(d.valCnh);
+      if(dCnh!==null){
+        if(dCnh<0) novos.push({id:id++,nivel:"danger",tipo:"CNH Vencida",titulo:`CNH VENCIDA — ${d.nome}`,desc:`${d.nome}: CNH Cat. ${d.cnh} venceu há ${Math.abs(dCnh)} dia(s). Motorista não pode dirigir.`,pg:"drivers"});
+        else if(dCnh<=15) novos.push({id:id++,nivel:"danger",tipo:"CNH",titulo:`CNH vence em ${dCnh} dia(s) — ${d.nome}`,desc:`${d.nome}: CNH Cat. ${d.cnh} vence em ${d.valCnh}. Renovar com urgência.`,pg:"drivers"});
+        else if(dCnh<=30) novos.push({id:id++,nivel:"warning",tipo:"CNH",titulo:`CNH vence em ${dCnh} dias — ${d.nome}`,desc:`${d.nome}: CNH Cat. ${d.cnh} vence em ${d.valCnh}.`,pg:"drivers"});
+        else if(dCnh<=90) novos.push({id:id++,nivel:"info",tipo:"CNH",titulo:`CNH vence em ${dCnh} dias — ${d.nome}`,desc:`${d.nome}: CNH Cat. ${d.cnh} vence em ${d.valCnh}.`,pg:"drivers"});
+      }
+    });
+
+    // ── OSs EM ATRASO ──
+    maint.forEach(m=>{
+      if(m.status==="Finalizada")return;
+      const dPrev=diasAte(m.prev);
+      if(dPrev!==null&&dPrev<0) novos.push({id:id++,nivel:"warning",tipo:"OS Atrasada",titulo:`OS atrasada ${Math.abs(dPrev)} dia(s) — ${m.placa}`,desc:`${m.id}: ${m.desc} — previsão era ${m.prev}.`,pg:"maintenance"});
+    });
+
+    // Substitui apenas alertas automáticos, mantém alertas manuais
+    setAlerts(prev=>{
+      const manuais=prev.filter(a=>a._manual);
+      return[...novos,...manuais];
+    });
+  },[ready,vehicles,drivers,maint,fines,vistorias]);
+
   const goPage=p=>{setPage(p);setSideOpen(false);setNotif(false);};
 
   const handleLogin=u=>{

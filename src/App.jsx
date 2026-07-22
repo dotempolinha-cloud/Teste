@@ -514,25 +514,96 @@ function Login({onLogin,sysUsers}){
 }
 
 /* ═══ DASHBOARD ═══ */
-function Dashboard({nav,vehicles,drivers,alerts,fuel,maint}){
-  const gastoComb=fuel.reduce((a,x)=>a+x.total,0);
-  const gastoMnt=maint.reduce((a,x)=>a+x.custo,0);
+function Dashboard({nav,vehicles,drivers,alerts,fuel,maint,trips,setTrips,setVehicles}){
+  const[saidaRapida,setSaidaRapida]=useState(false);
+  const[sr,setSr]=useState({placa:"",mot:"",dest:""});
+  const uSr=k=>v=>setSr(p=>({...p,[k]:v}));
+
+  const confirmarSaida=()=>{
+    if(!sr.placa||!sr.mot||!sr.dest){return;}
+    const id=`VGM-${Date.now().toString().slice(-8)}`;
+    const now=new Date();
+    const ts=`${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+    const vv=vehicles.find(v=>v.placa===sr.placa);
+    setTrips(p=>[{id,placa:sr.placa,mod:vv?.modelo||"",mot:sr.mot,dest:sr.dest,kmi:null,kmf:null,saida:ts,ret:null,fin:"Serviço",sec:vv?.sec||"—",sit:"Em andamento"},...p]);
+    setVehicles(p=>p.map(v=>v.placa===sr.placa?{...v,sit:"Em uso",mot:sr.mot}:v));
+    setSr({placa:"",mot:"",dest:""});setSaidaRapida(false);
+  };
+
+  const ea=trips?.filter(t=>t.sit==="Em andamento")||[];
+  const disponiveis=vehicles.filter(v=>v.sit==="Disponível");
+  const motoristasAtivos=drivers.filter(d=>d.sit==="Ativo");
+
   return<div>
+    {/* SAÍDA RÁPIDA */}
+    {saidaRapida&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>e.target===e.currentTarget&&setSaidaRapida(false)}>
+      <div className="fu" style={{background:"var(--card)",width:"100%",maxWidth:480,boxShadow:"0 24px 64px rgba(0,0,0,.35)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 18px",borderBottom:"1px solid var(--bd)",background:"#0c1a47"}}>
+          <span style={{fontWeight:700,fontSize:14,color:"white"}}>⚡ Saída Rápida</span>
+          <button onClick={()=>setSaidaRapida(false)} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,.6)",display:"flex"}}><X size={17}/></button>
+        </div>
+        <div style={{padding:20}}>
+          {disponiveis.length===0&&<div style={{background:"#fef9c3",border:"1px solid #fde047",padding:"10px 12px",marginBottom:12,fontSize:13,color:"#a16207"}}>⚠ Nenhum veículo disponível no momento.</div>}
+          <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+            <FF lb="Veículo" val={sr.placa} set={uSr("placa")} opts={disponiveis.map(v=>`${v.placa} — ${v.modelo}`).map(s=>s.split(" — ")[0])} req/>
+            <FF lb="Motorista" val={sr.mot} set={uSr("mot")} opts={motoristasAtivos.map(d=>d.nome)} req/>
+            <FF lb="Destino" val={sr.dest} set={uSr("dest")} req/>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <Btn click={confirmarSaida} full dis={!sr.placa||!sr.mot||!sr.dest}>✓ Confirmar Saída</Btn>
+            <Btn ghost click={()=>setSaidaRapida(false)}>Cancelar</Btn>
+          </div>
+        </div>
+      </div>
+    </div>}
+
+    {/* BANNER SAÍDA RÁPIDA */}
+    <div style={{background:"#0c1a47",padding:"12px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+      <div>
+        <div style={{fontSize:15,fontWeight:800,color:"white"}}>Painel Geral — {new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}</div>
+        <div style={{fontSize:12,color:"rgba(203,213,225,.6)"}}>
+          {ea.length>0?<span className="blink" style={{color:"#60a5fa"}}>{ea.length} viagem(ns) em andamento agora</span>:<span>Nenhuma viagem em andamento</span>}
+          {" · "}{disponiveis.length} veículo(s) disponível(is)
+        </div>
+      </div>
+      <button onClick={()=>setSaidaRapida(true)} style={{background:"#1d4ed8",color:"white",border:"none",padding:"10px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8}}>
+        <MapPin size={15}/>⚡ Saída Rápida
+      </button>
+    </div>
+
     <div className="gkpi">
       <Kpi lb="Total da Frota" vl={vehicles.length} sub="Veículos cadastrados" Ic={Car} top="#1d4ed8"/>
-      <Kpi lb="Disponíveis" vl={vehicles.filter(v=>v.sit==="Disponível").length} sub="Prontos para uso" Ic={CheckCircle} cor="#16a34a" top="#16a34a"/>
+      <Kpi lb="Disponíveis" vl={disponiveis.length} sub="Prontos para uso" Ic={CheckCircle} cor="#16a34a" top="#16a34a"/>
       <Kpi lb="Em Circulação" vl={vehicles.filter(v=>v.sit==="Em uso").length} sub="Viagens ativas agora" Ic={Activity} cor="#0284c7" top="#0284c7"/>
       <Kpi lb="Em Manutenção" vl={vehicles.filter(v=>v.sit==="Manutenção").length} sub="Ordens abertas" Ic={Wrench} cor="#d97706" top="#d97706"/>
-      <Kpi lb="Combustível" vl={`R$ ${gastoComb.toLocaleString("pt-BR",{minimumFractionDigits:2})}`} sub="Total registrado" Ic={Fuel} top="#1d4ed8"/>
-      <Kpi lb="Motoristas Ativos" vl={drivers.filter(d=>d.sit==="Ativo").length} sub={`${drivers.length} cadastrados`} Ic={Users} top="#1d4ed8"/>
-      <Kpi lb="Manutenção" vl={`R$ ${gastoMnt.toLocaleString("pt-BR",{minimumFractionDigits:2})}`} sub="Total registrado" Ic={Wrench} top="#d97706"/>
+      <Kpi lb="Combustível" vl={`R$ ${fuel.reduce((a,x)=>a+x.total,0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`} sub="Total registrado" Ic={Fuel} top="#1d4ed8"/>
+      <Kpi lb="Motoristas Ativos" vl={motoristasAtivos.length} sub={`${drivers.length} cadastrados`} Ic={Users} top="#1d4ed8"/>
+      <Kpi lb="Manutenção" vl={`R$ ${maint.reduce((a,x)=>a+x.custo,0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`} sub="Total registrado" Ic={Wrench} top="#d97706"/>
       <Kpi lb="Alertas Ativos" vl={alerts.length} sub={`${alerts.filter(a=>a.nivel==="danger").length} crítico(s)`} Ic={Bell} cor="#dc2626" top="#dc2626"/>
     </div>
+
+    {/* VIAGENS EM ANDAMENTO */}
+    {ea.length>0&&<div style={{background:"var(--card)",border:"1px solid var(--bd)",marginBottom:12}}>
+      <div style={{padding:"10px 16px",borderBottom:"1px solid var(--bd)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><span className="blink" style={{width:8,height:8,background:"#0284c7",borderRadius:"50%",display:"inline-block"}}/><span style={{fontWeight:700,fontSize:13,color:"var(--tx)"}}>{ea.length} Viagem(ns) em Andamento</span></div>
+        <button onClick={()=>nav("trips")} style={{fontSize:12,color:P,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Ver todas →</button>
+      </div>
+      <div style={{padding:"0 4px"}}>
+        {ea.map((t,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:i<ea.length-1?"1px solid var(--bd)":"none",flexWrap:"wrap",gap:8}}>
+          <div style={{display:"flex",gap:12,alignItems:"center"}}>
+            <div style={{width:36,height:36,background:"#eff6ff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Car size={16} color={P}/></div>
+            <div><div style={{fontSize:13,fontWeight:700,color:"var(--tx)"}}>{t.placa} <span style={{fontWeight:400,color:"var(--mu)"}}>— {t.mot}</span></div><div style={{fontSize:11,color:"var(--mu)"}}>{t.dest} · Saiu às {t.saida}</div></div>
+          </div>
+          <Bdg lb="Em andamento" tp="info"/>
+        </div>)}
+      </div>
+    </div>}
+
     <div className="gdash">
       <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:16}}>
         <div style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginBottom:12}}>Situação da Frota</div>
-        {vehicles.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--mu)",fontSize:13}}>Nenhum veículo cadastrado ainda.<br/>Acesse "Veículos" para começar.</div>}
-        {vehicles.length>0&&[["Disponíveis",vehicles.filter(v=>v.sit==="Disponível").length,"#16a34a"],["Em Uso",vehicles.filter(v=>v.sit==="Em uso").length,"#0284c7"],["Manutenção",vehicles.filter(v=>v.sit==="Manutenção").length,"#d97706"],["Baixados",vehicles.filter(v=>v.sit==="Baixado").length,"#94a3b8"]].map(([lb,n,c])=>
+        {vehicles.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--mu)",fontSize:13}}>Nenhum veículo cadastrado ainda.</div>}
+        {vehicles.length>0&&[["Disponíveis",disponiveis.length,"#16a34a"],["Em Uso",vehicles.filter(v=>v.sit==="Em uso").length,"#0284c7"],["Manutenção",vehicles.filter(v=>v.sit==="Manutenção").length,"#d97706"],["Baixados",vehicles.filter(v=>v.sit==="Baixado").length,"#94a3b8"]].map(([lb,n,c])=>
           <div key={lb} style={{marginBottom:12}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"var(--tx)"}}>{lb}</span><span style={{fontSize:13,fontWeight:700,color:c}}>{n} veículo{n!==1?"s":""}</span></div>
             <div style={{height:6,background:"var(--bd)"}}><div style={{height:"100%",width:`${vehicles.length>0?(n/vehicles.length)*100:0}%`,background:c,transition:"width .4s"}}/></div>
@@ -542,8 +613,12 @@ function Dashboard({nav,vehicles,drivers,alerts,fuel,maint}){
       <div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:16}}>
         <div style={{fontWeight:700,fontSize:14,color:"var(--tx)",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>Alertas Críticos <button onClick={()=>nav("alerts")} style={{fontSize:12,color:P,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Ver todos →</button></div>
         {alerts.length===0&&<div style={{padding:"20px",textAlign:"center",color:"var(--mu)",fontSize:13}}>✓ Nenhum alerta ativo</div>}
-        {alerts.slice(0,5).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"9px 0",borderBottom:"1px solid var(--bd)"}}>
-          <div style={{flexShrink:0,marginTop:2}}>{a.nivel==="danger"?<AlertCircle size={13} color="#dc2626"/>:a.nivel==="warning"?<AlertCircle size={13} color="#d97706"/>:<Bell size={13} color="#0284c7"/>}</div>
+        {alerts.filter(a=>a.nivel==="danger").slice(0,5).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"9px 0",borderBottom:"1px solid var(--bd)"}}>
+          <AlertCircle size={13} color="#dc2626" style={{flexShrink:0,marginTop:2}}/>
+          <div><div style={{fontSize:12,fontWeight:600,color:"var(--tx)"}}>{a.titulo}</div><div style={{fontSize:11,color:"var(--mu)",lineHeight:1.4}}>{a.desc}</div></div>
+        </div>)}
+        {alerts.filter(a=>a.nivel==="warning").slice(0,3).map((a,i)=><div key={i} style={{display:"flex",gap:10,padding:"9px 0",borderBottom:"1px solid var(--bd)"}}>
+          <AlertCircle size={13} color="#d97706" style={{flexShrink:0,marginTop:2}}/>
           <div><div style={{fontSize:12,fontWeight:600,color:"var(--tx)"}}>{a.titulo}</div><div style={{fontSize:11,color:"var(--mu)",lineHeight:1.4}}>{a.desc}</div></div>
         </div>)}
       </div>

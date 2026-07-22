@@ -1786,12 +1786,13 @@ if(vs)setVistorias(vs);
       } else if(v.sit==="Disponível"||v.sit==="Em uso"){
         novos.push({id:id++,nivel:"info",tipo:"Vistoria",titulo:`Sem vistoria cadastrada — ${placa}`,desc:`${nome}: nenhuma vistoria registrada. Realize a primeira inspeção.`,pg:"checklist"});
       }
-    });
-
-      // Foto do documento (CRLV) ausente
-      if(!v.fotoDoc&&v.sit!=="Baixado"&&v.sit!=="Leiloado"){
+    // Foto do documento (CRLV) ausente
+      if(!v.fotoDoc){
         novos.push({id:id++,nivel:"info",tipo:"Documento",titulo:`Foto do CRLV ausente — ${placa}`,desc:`${nome}: sem foto do documento/CRLV cadastrada. Adicione em Veículos → Editar.`,pg:"vehicles"});
       }
+    });
+
+    
 
     // ── MOTORISTAS ──
     drivers.forEach(d=>{

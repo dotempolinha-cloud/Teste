@@ -758,7 +758,7 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
 
 /* ═══ FUEL ═══ */
 function FuelPage({vehicles,drivers,fuel,setFuel,toast}){
-  const[show,setShow]=useState(false);const[f,setF]=useState({placa:"",mot:"",posto:"",tipo:"Diesel S-10",litros:"",vl:"",km:""});
+  const[show,setShow]=useState(false);const[cfm,setCfm]=useState(null);const[f,setF]=useState({placa:"",mot:"",posto:"",tipo:"Diesel S-10",litros:"",vl:"",km:""});
   const u=k=>v=>setF(p=>({...p,[k]:v}));
   const reg=()=>{
     if(!f.placa||!f.litros){toast("Preencha veículo e litros.","danger");return;}
@@ -804,7 +804,7 @@ function FuelPage({vehicles,drivers,fuel,setFuel,toast}){
 
 /* ═══ MAINTENANCE ═══ */
 function MaintenancePage({vehicles,setVehicles,maint,setMaint,toast}){
-  const[show,setShow]=useState(false);const[f,setF]=useState({placa:"",tipo:"Preventiva",desc:"",oficina:"",custo:"",prev:"",prior:"Média"});
+  const[show,setShow]=useState(false);const[cfm,setCfm]=useState(null);const[f,setF]=useState({placa:"",tipo:"Preventiva",desc:"",oficina:"",custo:"",prev:"",prior:"Média"});
   const u=k=>v=>setF(p=>({...p,[k]:v}));
   const criar=()=>{
     if(!f.placa||!f.desc){toast("Preencha veículo e descrição.","danger");return;}
@@ -846,11 +846,16 @@ function MaintenancePage({vehicles,setVehicles,maint,setMaint,toast}){
             <Td ch={<span style={{fontWeight:600,color:m.custo>1000?"#dc2626":"var(--tx)",whiteSpace:"nowrap"}}>R$ {m.custo.toLocaleString("pt-BR")}</span>}/>
             <Td ch={<Bdg lb={m.prior} tp={m.prior==="Alta"?"bad":m.prior==="Média"?"warn":"gray"}/>}/>
             <Td ch={<SBdg v={m.status}/>}/>
-            <Td ch={m.status==="Agendada"?<Btn sm click={()=>chSt(m.id,"Em execução")}>Iniciar</Btn>:m.status==="Em execução"?<Btn sm click={()=>chSt(m.id,"Finalizada")}>Finalizar</Btn>:<span style={{color:"var(--mu)",fontSize:11}}>—</span>}/>
+            <Td ch={<div style={{display:"flex",gap:4,alignItems:"center"}}>
+              {m.status==="Agendada"&&<Btn sm click={()=>chSt(m.id,"Em execução")}>Iniciar</Btn>}
+              {m.status==="Em execução"&&<Btn sm click={()=>chSt(m.id,"Finalizada")}>Finalizar</Btn>}
+              <button onClick={()=>setCfm({msg:`Excluir OS ${m.id} — ${m.placa}? Esta ação não pode ser desfeita.`,ok:()=>{setMaint(p=>p.filter(x=>x.id!==m.id));if(m.status!=="Finalizada")setVehicles(p=>p.map(v=>v.placa===m.placa&&v.sit==="Manutenção"?{...v,sit:"Disponível"}:v));toast("OS excluída.","danger");setCfm(null);}})} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>
+            </div>}/>
           </tr>)}</tbody>
         </table>
       </div>
     }
+    {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;
 }
 

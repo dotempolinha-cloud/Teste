@@ -1825,7 +1825,7 @@ if(vs)setVistorias(vs);
   if(!logged)return<div className="sga"><style>{CSS}</style><Login onLogin={handleLogin} sysUsers={sysUsers}/></div>;
 
   const pages={
-    dashboard:<Dashboard nav={goPage} vehicles={vehicles} drivers={drivers} alerts={alerts} fuel={fuel} maint={maint}/>,
+    dashboard:<Dashboard nav={goPage} vehicles={vehicles} drivers={drivers} alerts={alerts} fuel={fuel} maint={maint} trips={trips} setTrips={setTrips} setVehicles={setVehicles}/>,
     vehicles:<Vehicles vehicles={vehicles} setVehicles={setVehicles} toast={toast}/>,
     drivers:<Drivers drivers={drivers} setDrivers={setDrivers} toast={toast}/>,
     trips:<Trips vehicles={vehicles} setVehicles={setVehicles} drivers={drivers} trips={trips} setTrips={setTrips} toast={toast}/>,

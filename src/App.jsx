@@ -627,20 +627,8 @@ function Dashboard({nav,vehicles,drivers,alerts,fuel,maint,trips,setTrips,setVeh
       <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontWeight:700,fontSize:14,color:"var(--tx)"}}>Veículos Recentes</span><button onClick={()=>nav("vehicles")} style={{fontSize:12,color:P,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Ver todos →</button></div>
       {vehicles.length===0
         ?<div style={{padding:"32px",textAlign:"center",color:"var(--mu)",fontSize:13}}>Nenhum veículo cadastrado.</div>
-        :<div className="tbl"><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-          <thead><tr>
-            <Th ch="Placa" st={{textAlign:"center"}}/>
-            <Th ch="Veículo" st={{textAlign:"center"}}/>
-            <Th ch="Secretaria" st={{textAlign:"center"}}/>
-            <Th ch="Status" st={{textAlign:"center"}}/>
-          </tr></thead>
-          <tbody>{vehicles.slice(0,5).map((v,i)=><tr key={i} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
-            <Td st={{textAlign:"center"}} ch={<span style={{fontWeight:700,color:NAV_BG}}>{v.placa}</span>}/>
-            <Td st={{textAlign:"center"}} ch={<span style={{fontWeight:500}}>{v.modelo}</span>}/>
-            <Td st={{textAlign:"center"}} ch={<span>{v.sec}</span>}/>
-            <Td st={{textAlign:"center"}} ch={<SBdg v={v.sit}/>}/>
-          </tr>)}</tbody>
-        </table></div>
+        :<div className="tbl"><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr><Th ch="Placa"/><Th ch="Veículo"/><Th ch="Secretaria"/><Th ch="Status"/></tr></thead>
+        <tbody>{vehicles.slice(0,5).map((v,i)=><tr key={i} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}><Td ch={<span style={{fontWeight:700,color:NAV_BG}}>{v.placa}</span>}/><Td ch={<span style={{fontWeight:500}}>{v.modelo}</span>}/><Td ch={<span>{v.sec}</span>}/><Td ch={<SBdg v={v.sit}/>}/></tr>)}</tbody></table></div>
       }
     </div>
   </div>;

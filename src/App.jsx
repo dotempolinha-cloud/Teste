@@ -672,7 +672,7 @@ function VeiculoDetalhe({v,onEdit,onClose}){
 function Vehicles({vehicles,setVehicles,toast}){
   const[tab,setTab]=useState("Todos");const[srch,setSrch]=useState("");
   const[sel,setSel]=useState(null);const[modal,setModal]=useState(null);const[cfm,setCfm]=useState(null);
-  const tabs=["Todos","Disponível","Em uso","Manutenção","Baixado"];
+  const tabs=["Todos","Disponível","Manutenção","Baixado"];
   const filt=vehicles.filter(v=>(tab==="Todos"||v.sit===tab)&&(!srch||[v.placa,v.modelo,v.mot||""].some(x=>(x||"").toLowerCase().includes(srch.toLowerCase()))));
   const saveV=v=>{if(modal?.id)setVehicles(p=>p.map(x=>x.id===v.id?v:x));else setVehicles(p=>[v,...p]);};
   const delV=v=>setCfm({msg:`Excluir ${v.placa} — ${v.modelo}? Esta ação não pode ser desfeita.`,ok:()=>{setVehicles(p=>p.filter(x=>x.id!==v.id));toast("Veículo excluído do sistema.","danger");setCfm(null);}});

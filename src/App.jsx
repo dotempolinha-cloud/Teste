@@ -1699,26 +1699,39 @@ export default function App(){
   const[sysUsers,setSysUsers]=useState(SYS_USERS_INIT);
   const[vistorias,setVistorias]=useState([]);
 
-  /* Carrega dados persistidos */
+  /* ═══ TEMPO REAL — escuta mudanças no Firebase e atualiza automaticamente ═══ */
   useEffect(()=>{
-    (async()=>{
-      try{
-        const[v,d,t,f,m,fi,al,su,lg,us,vs]=await Promise.all([
-  Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
-  Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
-  Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),
-]);
-if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
-if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
-if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
-if(us&&us.length)setSysUsers(us);
-if(vs)setVistorias(vs);
-      }catch{}
-      setReady(true);
-    })();
+    const unsubs=[];
+    const map=[
+      ["sga_v",   setVehicles],
+      ["sga_d",   setDrivers],
+      ["sga_t",   setTrips],
+      ["sga_f",   setFuel],
+      ["sga_m",   setMaint],
+      ["sga_fi",  setFines],
+      ["sga_al",  setAlerts],
+      ["sga_su",  setSuppliers],
+      ["sga_log", setLog],
+      ["sga_vistorias", setVistorias],
+      ["sga_users",(v)=>{ if(v&&v.length)setSysUsers(v); }],
+    ];
+    let loaded=0;
+    map.forEach(([key,setter])=>{
+      const unsub=Store.listen(key,(val)=>{
+        if(val!==null&&val!==undefined) setter(val);
+        loaded++;
+        if(loaded>=map.length) setReady(true);
+      });
+      // Se não tiver dados ainda, conta como carregado
+      setTimeout(()=>{ if(loaded<map.length){ loaded=map.length; setReady(true); } },3000);
+      unsubs.push(unsub);
+    });
+    // Garante que o sistema inicia mesmo sem dados
+    setTimeout(()=>setReady(true),3000);
+    return()=>unsubs.forEach(u=>u&&u());
   },[]);
 
-  /* Salva automaticamente — toda alteração é permanente nesta sessão/storage */
+  /* Salva automaticamente no Firebase quando dados mudam */
   useEffect(()=>{if(ready)Store.set("sga_v",vehicles);},[vehicles,ready]);
   useEffect(()=>{if(ready)Store.set("sga_d",drivers);},[drivers,ready]);
   useEffect(()=>{if(ready)Store.set("sga_t",trips);},[trips,ready]);

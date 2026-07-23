@@ -132,22 +132,45 @@ const Store = {
 
 const NAV_BG="#0c1a47", P="#1d4ed8";
 
-/* ═══ CLOUDINARY ═══ */
-const CLOUD_NAME="c1vt96ia";
-const UPLOAD_PRESET="sga_upanema";
+/* ═══ SUPABASE STORAGE — fotos privadas ═══ */
+const SUPA_URL="https://quvpjowrdoxdehroarfn.supabase.co";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dnBqb3dyZG94ZGVocm9hcmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NjIxMTgsImV4cCI6MjEwMDMzODExOH0.maS373WVXXGN2NACsjzqN1yQ6XGEfzCd1S1wU8_uC3U";
+const SUPA_BUCKET="fotos-sga";
 
-async function uploadCloudinary(base64){
+async function uploadSupabase(base64){
   try{
-    const fd=new FormData();
-    fd.append("file",base64);
-    fd.append("upload_preset",UPLOAD_PRESET);
-    fd.append("folder","sga-frota");
-    const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,{method:"POST",body:fd});
-    const data=await res.json();
-    if(data.secure_url)return data.secure_url;
+    // Converte base64 para blob
+    const res=await fetch(base64);
+    const blob=await res.blob();
+    const ext=blob.type.includes("png")?"png":"jpg";
+    const nome=`${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+    // Faz upload para o Supabase Storage
+    const up=await fetch(`${SUPA_URL}/storage/v1/object/${SUPA_BUCKET}/${nome}`,{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${SUPA_KEY}`,
+        "Content-Type":blob.type,
+        "x-upsert":"true",
+      },
+      body:blob,
+    });
+    if(!up.ok){console.error("Supabase upload erro:",await up.text());return null;}
+
+    // Gera URL assinada (válida por 10 anos — 315360000 segundos)
+    const sign=await fetch(`${SUPA_URL}/storage/v1/object/sign/${SUPA_BUCKET}/${nome}`,{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${SUPA_KEY}`,
+        "Content-Type":"application/json",
+      },
+      body:JSON.stringify({expiresIn:315360000}),
+    });
+    const signData=await sign.json();
+    if(signData.signedURL) return `${SUPA_URL}/storage/v1${signData.signedURL}`;
     return null;
   }catch(e){
-    console.error("Cloudinary erro:",e);
+    console.error("Supabase erro:",e);
     return null;
   }
 }
@@ -292,8 +315,8 @@ function PhotoUpload({photo,setPhoto,toast,lb="Foto"}){
         canvas.width=w;canvas.height=h;
         canvas.getContext("2d").drawImage(img,0,0,w,h);
         const base64=canvas.toDataURL("image/jpeg",0.88);
-        const url=await uploadCloudinary(base64);
-        if(url){setPhoto(url);toast("✓ Foto enviada com sucesso!");}
+        const url=await uploadSupabase(base64);
+        if(url){setPhoto(url);toast("✓ Foto enviada com segurança!");}
         else{setPhoto(base64);toast("Foto salva localmente.","info");}
       };
       img.src=ev.target.result;
@@ -348,10 +371,10 @@ function MultiPhotoUpload({fotos=[],setFotos,toast,max=5,lb="Fotos"}){
           canvas.width=w;canvas.height=h;
           canvas.getContext("2d").drawImage(img,0,0,w,h);
           const base64=canvas.toDataURL("image/jpeg",0.88);
-          const url=await uploadCloudinary(base64);
+          const url=await uploadSupabase(base64);
           const src=url||base64;
           setFotos(p=>[...p,{id:Date.now()+Math.random(),src,nome:file.name}]);
-          if(url)toast("✓ Foto enviada!");
+          if(url)toast("✓ Foto enviada com segurança!");
         };
         img.src=ev.target.result;
       };

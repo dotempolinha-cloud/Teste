@@ -3,7 +3,7 @@
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import { doc, setDoc, onSnapshot, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -106,45 +106,27 @@ html,body{width:100%;height:100%;min-height:100vh;overflow-x:hidden;background:#
 }
 `;
 
-/* ═══ STORE — Firebase Firestore com tempo real ═══ */
+/* ═══ STORAGE — Firebase Firestore ═══ */
 const Store = {
-  /* Salva dados no Firestore */
-  async set(key, value){
-    try{
-      await setDoc(doc(db,"storage",key),{
-        value: value,
-        updatedAt: new Date().toISOString(),
-      });
-    }catch(e){
-      console.error("Store.set erro:",key,e);
-    }
-  },
-
-  /* Carrega dados uma única vez (usado na inicialização) */
   async get(key){
     try{
-      return new Promise((resolve)=>{
-        const unsub=onSnapshot(doc(db,"storage",key),(snap)=>{
-          unsub(); // cancela após primeira leitura
-          resolve(snap.exists()?snap.data().value:null);
-        },(e)=>{
-          console.error("Store.get erro:",key,e);
-          resolve(null);
-        });
-      });
+      const snap=await getDoc(doc(db,"storage",key));
+      if(!snap.exists())return null;
+      return snap.data().value;
     }catch(e){
       console.error("Store.get erro:",key,e);
       return null;
     }
   },
-
-  /* Escuta mudanças em tempo real — retorna função para cancelar */
-  listen(key, callback){
-    return onSnapshot(
-      doc(db,"storage",key),
-      (snap)=>{ if(snap.exists()) callback(snap.data().value); },
-      (e)=>console.error("Store.listen erro:",key,e)
-    );
+  async set(key,value){
+    try{
+      await setDoc(doc(db,"storage",key),{
+        value:value,
+        updatedAt:new Date().toISOString(),
+      });
+    }catch(e){
+      console.error("Store.set erro:",key,e);
+    }
   },
 };
 
@@ -1699,39 +1681,26 @@ export default function App(){
   const[sysUsers,setSysUsers]=useState(SYS_USERS_INIT);
   const[vistorias,setVistorias]=useState([]);
 
-  /* ═══ TEMPO REAL — escuta mudanças no Firebase e atualiza automaticamente ═══ */
+  /* Carrega dados persistidos */
   useEffect(()=>{
-    const unsubs=[];
-    const map=[
-      ["sga_v",   setVehicles],
-      ["sga_d",   setDrivers],
-      ["sga_t",   setTrips],
-      ["sga_f",   setFuel],
-      ["sga_m",   setMaint],
-      ["sga_fi",  setFines],
-      ["sga_al",  setAlerts],
-      ["sga_su",  setSuppliers],
-      ["sga_log", setLog],
-      ["sga_vistorias", setVistorias],
-      ["sga_users",(v)=>{ if(v&&v.length)setSysUsers(v); }],
-    ];
-    let loaded=0;
-    map.forEach(([key,setter])=>{
-      const unsub=Store.listen(key,(val)=>{
-        if(val!==null&&val!==undefined) setter(val);
-        loaded++;
-        if(loaded>=map.length) setReady(true);
-      });
-      // Se não tiver dados ainda, conta como carregado
-      setTimeout(()=>{ if(loaded<map.length){ loaded=map.length; setReady(true); } },3000);
-      unsubs.push(unsub);
-    });
-    // Garante que o sistema inicia mesmo sem dados
-    setTimeout(()=>setReady(true),3000);
-    return()=>unsubs.forEach(u=>u&&u());
+    (async()=>{
+      try{
+        const[v,d,t,f,m,fi,al,su,lg,us,vs]=await Promise.all([
+          Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
+          Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
+          Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),
+        ]);
+        if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
+        if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
+        if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
+        if(us&&us.length)setSysUsers(us);
+        if(vs)setVistorias(vs);
+      }catch{}
+      setReady(true);
+    })();
   },[]);
 
-  /* Salva automaticamente no Firebase quando dados mudam */
+  /* Salva automaticamente */
   useEffect(()=>{if(ready)Store.set("sga_v",vehicles);},[vehicles,ready]);
   useEffect(()=>{if(ready)Store.set("sga_d",drivers);},[drivers,ready]);
   useEffect(()=>{if(ready)Store.set("sga_t",trips);},[trips,ready]);

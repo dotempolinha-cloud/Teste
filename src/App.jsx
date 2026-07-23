@@ -106,36 +106,46 @@ html,body{width:100%;height:100%;min-height:100vh;overflow-x:hidden;background:#
 }
 `;
 
-/* ═══ STORAGE (troca por Firebase Firestore quando pronto) ═══ */
+/* ═══ STORE — Firebase Firestore com tempo real ═══ */
 const Store = {
-async get(key) {
-  try {
-    const ref = doc(db, "storage", key);
-    const snap = await getDoc(ref);
+  /* Salva dados no Firestore */
+  async set(key, value){
+    try{
+      await setDoc(doc(db,"storage",key),{
+        value: value,
+        updatedAt: new Date().toISOString(),
+      });
+    }catch(e){
+      console.error("Store.set erro:",key,e);
+    }
+  },
 
-    if (!snap.exists()) {
+  /* Carrega dados uma única vez (usado na inicialização) */
+  async get(key){
+    try{
+      return new Promise((resolve)=>{
+        const unsub=onSnapshot(doc(db,"storage",key),(snap)=>{
+          unsub(); // cancela após primeira leitura
+          resolve(snap.exists()?snap.data().value:null);
+        },(e)=>{
+          console.error("Store.get erro:",key,e);
+          resolve(null);
+        });
+      });
+    }catch(e){
+      console.error("Store.get erro:",key,e);
       return null;
     }
+  },
 
-    return snap.data().value;
-  } catch (e) {
-    console.error("Erro ao carregar", key, e);
-    return null;
-  }
-},
-
-async set(key, value) {
-  try {
-    const ref = doc(db, "storage", key);
-
-    await setDoc(ref, {
-      value: value,
-      updatedAt: new Date()
-    });
-  } catch (e) {
-    console.error("Erro ao salvar", key, e);
-  }
-},
+  /* Escuta mudanças em tempo real — retorna função para cancelar */
+  listen(key, callback){
+    return onSnapshot(
+      doc(db,"storage",key),
+      (snap)=>{ if(snap.exists()) callback(snap.data().value); },
+      (e)=>console.error("Store.listen erro:",key,e)
+    );
+  },
 };
 
 const NAV_BG="#0c1a47", P="#1d4ed8";

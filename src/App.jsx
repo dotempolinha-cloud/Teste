@@ -3,10 +3,7 @@
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import {
-  collection, doc, setDoc, deleteDoc,
-  onSnapshot, writeBatch, getDoc,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -1736,42 +1733,37 @@ export default function App(){
   const[sysUsers,setSysUsers]=useState(SYS_USERS_INIT);
   const[vistorias,setVistorias]=useState([]);
 
-/* ═══ TEMPO REAL — cada coleção escuta o Firestore individualmente ═══ */
+/* Carrega dados persistidos */
   useEffect(()=>{
-    const unsubs=[];
-    // Coleções com documentos individuais — nunca se sobrescrevem entre dispositivos
-    unsubs.push(storeListen("sga_v",   setVehicles));
-    unsubs.push(storeListen("sga_d",   setDrivers));
-    unsubs.push(storeListen("sga_t",   setTrips));
-    unsubs.push(storeListen("sga_f",   setFuel));
-    unsubs.push(storeListen("sga_m",   setMaint));
-    unsubs.push(storeListen("sga_fi",  setFines));
-    unsubs.push(storeListen("sga_su",  setSuppliers));
-    unsubs.push(storeListen("sga_vistorias", setVistorias));
-    unsubs.push(storeListen("sga_log", setLog));
-
-    // Usuários e alertas — documento único (menos crítico)
-    Store.get("sga_users").then(v=>{ if(v&&v.length)setSysUsers(v); });
-    Store.get("sga_al").then(v=>{ if(v)setAlerts(v); });
-
-    // Marca como pronto após 2s (tempo suficiente para carregar)
-    setTimeout(()=>setReady(true), 2000);
-
-    return()=>unsubs.forEach(u=>u&&u());
+    (async()=>{
+      try{
+        const[v,d,t,f,m,fi,al,su,lg,us,vs]=await Promise.all([
+          Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
+          Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
+          Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),
+        ]);
+        if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
+        if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
+        if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
+        if(us&&us.length)setSysUsers(us);
+        if(vs)setVistorias(vs);
+      }catch{}
+      setReady(true);
+    })();
   },[]);
 
-  /* Salva automaticamente — cada item vai para seu documento individual */
-  useEffect(()=>{if(ready)storeSync("sga_v",vehicles);},[vehicles,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_d",drivers);},[drivers,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_t",trips);},[trips,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_f",fuel);},[fuel,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_m",maint);},[maint,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_fi",fines);},[fines,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_su",suppliers);},[suppliers,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_vistorias",vistorias);},[vistorias,ready]);
-  useEffect(()=>{if(ready)storeSync("sga_log",log);},[log,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
+  /* Salva automaticamente */
+  useEffect(()=>{if(ready)Store.set("sga_v",vehicles);},[vehicles,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_d",drivers);},[drivers,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_t",trips);},[trips,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_f",fuel);},[fuel,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_m",maint);},[maint,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_fi",fines);},[fines,ready]);
   useEffect(()=>{if(ready)Store.set("sga_al",alerts);},[alerts,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_su",suppliers);},[suppliers,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_log",log);},[log,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
 
 /* ═══ ALERTAS AUTOMÁTICOS — roda ao carregar e quando veículos/motoristas mudam ═══ */
   useEffect(()=>{

@@ -804,8 +804,10 @@ function Drivers({drivers,setDrivers,toast}){
 
 /* ═══ TRIPS ═══ */
 function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
-  const[view,setView]=useState("lista");
+const[view,setView]=useState("lista");
   const[f,setF]=useState({placa:"",mot:"",dest:"",fin:"",sec:"",kmi:""});
+  const[retModal,setRetModal]=useState(null); // viagem aguardando retorno
+  const[kmf,setKmf]=useState("");
   const u=k=>v=>setF(p=>({...p,[k]:v}));
   const confirmar=()=>{
     if(!f.placa||!f.mot||!f.dest){toast("Preencha veículo, motorista e destino.","danger");return;}
@@ -817,15 +819,48 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
     setF({placa:"",mot:"",dest:"",fin:"",sec:"",kmi:""});setView("lista");
     toast("✓ Saída registrada! Veículo marcado como Em uso.");
   };
-  const retornar=id=>{
-    const t=trips.find(x=>x.id===id);
-    const now=new Date();const ts=now.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-    setTrips(trips.map(x=>x.id===id?{...x,sit:"Concluída",ret:ts}:x));
-    if(t)setVehicles(p=>p.map(v=>v.placa===t.placa?{...v,sit:"Disponível",mot:null}:v));
-    toast("✓ Retorno registrado! Veículo agora Disponível.");
+const confirmarRetorno=()=>{
+    if(!retModal)return;
+    const t=retModal;
+    const now=new Date();
+    const ts=now.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    const kmFinal=+kmf||null;
+    const kmRodado=kmFinal&&t.kmi?kmFinal-t.kmi:null;
+    setTrips(trips.map(x=>x.id===t.id?{...x,sit:"Concluída",ret:ts,kmf:kmFinal,kmRodado}:x));
+    // Atualiza KM do veículo automaticamente
+    setVehicles(p=>p.map(v=>v.placa===t.placa?{...v,sit:"Disponível",mot:null,...(kmFinal?{km:kmFinal}:{})}:v));
+    toast(`✓ Retorno registrado!${kmRodado?` Percorridos: ${kmRodado.toLocaleString("pt-BR")} km.`:""} Veículo disponível.`);
+    setRetModal(null);setKmf("");
   };
-  const ea=trips.filter(t=>t.sit==="Em andamento");
+const ea=trips.filter(t=>t.sit==="Em andamento");
   return<div>
+    {/* Modal de retorno com KM */}
+    {retModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>e.target===e.currentTarget&&setRetModal(null)}>
+      <div className="fu" style={{background:"var(--card)",width:"100%",maxWidth:420,boxShadow:"0 24px 64px rgba(0,0,0,.35)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 18px",borderBottom:"1px solid var(--bd)",background:"#16a34a"}}>
+          <span style={{fontWeight:700,fontSize:14,color:"white"}}>✓ Registrar Retorno</span>
+          <button onClick={()=>setRetModal(null)} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,.7)",display:"flex"}}><X size={17}/></button>
+        </div>
+        <div style={{padding:20}}>
+          <div style={{background:"var(--ra)",border:"1px solid var(--bd)",padding:"10px 14px",marginBottom:16,borderRadius:4}}>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--tx)"}}>{retModal.placa} — {retModal.mot}</div>
+            <div style={{fontSize:12,color:"var(--mu)"}}>{retModal.dest} · Saiu às {retModal.saida}</div>
+            {retModal.kmi&&<div style={{fontSize:12,color:"var(--mu)"}}>KM saída: {retModal.kmi.toLocaleString("pt-BR")} km</div>}
+          </div>
+          <div style={{marginBottom:16}}>
+            <label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:6}}>KM Final do Veículo</label>
+            <input type="number" value={kmf} onChange={e=>setKmf(e.target.value)} placeholder={retModal.kmi?`Mínimo: ${retModal.kmi}`:"Digite o KM atual"} style={{width:"100%",border:"1px solid var(--ibd)",padding:"10px 12px",fontSize:14,fontFamily:"inherit",background:"var(--inp)",color:"var(--tx)"}}/>
+            {kmf&&retModal.kmi&&+kmf>retModal.kmi&&<div style={{marginTop:6,fontSize:12,color:"#16a34a",fontWeight:600}}>✓ KM percorrido: {(+kmf-retModal.kmi).toLocaleString("pt-BR")} km</div>}
+            {kmf&&retModal.kmi&&+kmf<=retModal.kmi&&<div style={{marginTop:6,fontSize:12,color:"#dc2626"}}>⚠ KM final deve ser maior que o KM de saída ({retModal.kmi})</div>}
+          </div>
+          <p style={{fontSize:11,color:"var(--mu)",marginBottom:16}}>O KM final é opcional mas recomendado — atualiza o odômetro do veículo automaticamente.</p>
+          <div style={{display:"flex",gap:10}}>
+            <Btn click={confirmarRetorno} full dis={!!(kmf&&retModal.kmi&&+kmf<=retModal.kmi)}>✓ Confirmar Retorno</Btn>
+            <Btn ghost click={()=>setRetModal(null)}>Cancelar</Btn>
+          </div>
+        </div>
+      </div>
+    </div>}
     <SH title="Controle de Viagens" sub={`${trips.length} registro(s) — ${ea.length} em andamento agora`} action={<div style={{display:"flex",gap:8}}><Btn ghost sm click={()=>setView("lista")}>Lista</Btn><Btn click={()=>setView(view==="form"?"lista":"form")}>+ Registrar Saída</Btn></div>}/>
     {ea.length>0&&<div style={{background:"#e0f2fe",border:"1px solid #7dd3fc",padding:"10px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
       <span className="blink" style={{width:8,height:8,background:"#0284c7",borderRadius:"50%",display:"inline-block"}}/>
@@ -854,7 +889,7 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
       ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><MapPin size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhuma viagem registrada</div><div style={{fontSize:13}}>Clique em "+ Registrar Saída" para começar.</div></div>
       :<div className="tbl" style={{background:"var(--card)",border:"1px solid var(--bd)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Destino"/><Th ch="Saída"/><Th ch="Retorno"/><Th ch="Sec."/><Th ch="Status"/><Th ch="Ação"/></tr></thead>
+          <thead><tr><Th ch="Código"/><Th ch="Veículo"/><Th ch="Motorista"/><Th ch="Destino"/><Th ch="Saída"/><Th ch="Retorno"/><Th ch="KM Rodado"/><Th ch="Sec."/><Th ch="Status"/><Th ch="Ação"/></tr></thead>
           <tbody>{trips.map((t,i)=><tr key={t.id} className="hr" style={{background:i%2===0?"var(--ra)":"var(--card)"}}>
             <Td ch={<span style={{fontFamily:"monospace",fontSize:10,color:"var(--mu)"}}>{t.id}</span>}/>
             <Td ch={<div><div style={{fontWeight:600,fontSize:12}}>{t.placa}</div><div style={{fontSize:11,color:"var(--mu)"}}>{t.mod}</div></div>}/>
@@ -864,10 +899,11 @@ function Trips({vehicles,setVehicles,drivers,trips,setTrips,toast}){
             <Td ch={<span style={{fontSize:12,color:t.ret?"var(--sub)":"var(--mu)",whiteSpace:"nowrap"}}>{t.ret||"—"}</span>}/>
             <Td ch={<span style={{fontSize:11,color:"var(--mu)"}}>{t.sec}</span>}/>
             <Td ch={<SBdg v={t.sit}/>}/>
+            <Td ch={<span style={{fontSize:12,fontWeight:t.kmRodado?600:400,color:t.kmRodado?"#16a34a":"var(--mu)",whiteSpace:"nowrap"}}>{t.kmRodado?t.kmRodado.toLocaleString("pt-BR")+" km":"—"}</span>}/>
             <Td ch={<div style={{display:"flex",gap:4,alignItems:"center"}}>
-  {t.sit==="Em andamento"&&<button onClick={()=>retornar(t.id)} style={{background:"#16a34a",color:"white",border:"none",padding:"4px 9px",fontSize:11,cursor:"pointer",fontWeight:600,fontFamily:"inherit",whiteSpace:"nowrap"}}>Registrar Retorno</button>}
-  <button onClick={()=>{if(window.confirm(`Excluir viagem ${t.id}?`)){setTrips(p=>p.filter(x=>x.id!==t.id));if(t.sit==="Em andamento")setVehicles(p=>p.map(v=>v.placa===t.placa?{...v,sit:"Disponível",mot:null}:v));toast("Viagem excluída.","danger");}}} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>
-</div>}/>
+              {t.sit==="Em andamento"&&<button onClick={()=>{setRetModal(t);setKmf("");}} style={{background:"#16a34a",color:"white",border:"none",padding:"4px 9px",fontSize:11,cursor:"pointer",fontWeight:600,fontFamily:"inherit",whiteSpace:"nowrap"}}>Registrar Retorno</button>}
+              <button onClick={()=>{if(window.confirm(`Excluir viagem ${t.id}?`)){setTrips(p=>p.filter(x=>x.id!==t.id));if(t.sit==="Em andamento")setVehicles(p=>p.map(v=>v.placa===t.placa?{...v,sit:"Disponível",mot:null}:v));toast("Viagem excluída.","danger");}}} style={{background:"none",border:"none",padding:"3px 5px",cursor:"pointer",color:"#dc2626",display:"flex",alignItems:"center"}}><Trash2 size={14}/></button>
+            </div>}/>
           </tr>)}</tbody>
         </table>
       </div>

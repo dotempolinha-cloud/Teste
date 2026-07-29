@@ -210,23 +210,23 @@ const SYS_USERS_INIT=[
 ];
 
 const ROLE_PAGES={
-  admin:["dashboard","vehicles","drivers","trips","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit","settings"],
-  gestor:["dashboard","vehicles","drivers","trips","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit"],
-  secretario:["dashboard","vehicles","trips","financial","reports","alerts"],
-  supervisor:["dashboard","vehicles","drivers","trips","checklist","maintenance","alerts"],
-  motorista:["dashboard","trips","checklist"],
+  admin:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit","settings"],
+  gestor:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit"],
+  secretario:["dashboard","vehicles","trips","rotas","financial","reports","alerts"],
+  supervisor:["dashboard","vehicles","drivers","trips","rotas","checklist","maintenance","alerts"],
+  motorista:["dashboard","trips","rotas","checklist"],
   auditor:["dashboard","vehicles","drivers","financial","reports","audit"],
 };
 const ROLE_LABELS={admin:"Administrador",gestor:"Gestor da Garagem",secretario:"Secretário(a)",supervisor:"Supervisor",motorista:"Motorista",auditor:"Auditor"};
 
 const NAV_ITEMS=[
   {sec:null,items:[{id:"dashboard",lb:"Painel Geral",ic:LayoutDashboard}]},
-  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"checklist",lb:"Vistoria",ic:CheckSquare}]},
+  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"rotas",lb:"Rotas Fixas",ic:RefreshCw},{id:"checklist",lb:"Vistoria",ic:CheckSquare}]},
   {sec:"RECURSOS",items:[{id:"fuel",lb:"Abastecimento",ic:Fuel},{id:"maintenance",lb:"Manutenção",ic:Wrench},{id:"fines",lb:"Multas",ic:AlertOctagon}]},
   {sec:"GESTÃO",items:[{id:"financial",lb:"Financeiro",ic:DollarSign},{id:"reports",lb:"Relatórios",ic:FileText},{id:"suppliers",lb:"Fornecedores",ic:Building2}]},
   {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:SettingsIcon}]},
 ];
-const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",checklist:"Vistoria Veicular",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
+const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",rotas:"Rotas Fixas",checklist:"Vistoria Veicular",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
 
 /* ═══ TOAST ═══ */
 function useToast(){const[ts,setTs]=useState([]);const add=(m,t="success")=>{const id=Date.now()+Math.random();setTs(p=>[...p,{id,m,t}]);setTimeout(()=>setTs(p=>p.filter(x=>x.id!==id)),4200);};return{ts,add};}
@@ -798,6 +798,126 @@ function Drivers({drivers,setDrivers,toast}){
         <img src={sel.foto} alt={sel.nome} style={{width:100,height:100,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--bd)"}}/>
       </div>}<div className="g2"><div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Dados Pessoais</p>{[["Nome",sel.nome],["CPF",sel.cpf],["RG",sel.rg||"—"],["Matrícula",sel.mat||"—"],["Nascimento",sel.nasc||"—"],["Telefone",sel.tel||"—"],["E-mail",sel.email||"—"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div><div><p style={{fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",margin:"0 0 10px",paddingBottom:7,borderBottom:"1px solid var(--bd)"}}>Profissional</p>{[["Secretaria",sel.sec],["Cargo",sel.cargo],["Cat. CNH","Cat. "+sel.cnh],["Validade CNH",sel.valCnh||"—"],["Situação",sel.sit],["Veículo",sel.veiAtual||"—"],["Viagens",(sel.viagens||0)+" viagens"]].map(([l,v])=><DR key={l} l={l} v={v}/>)}</div></div><div style={{display:"flex",gap:10,marginTop:14,paddingTop:12,borderTop:"1px solid var(--bd)"}}><Btn Ic={Edit} click={()=>{setModal(sel);setSel(null);}}>Editar</Btn><Btn ghost click={()=>setSel(null)}>Fechar</Btn></div></Modal>}
     {(modal==="add"||modal?.id)&&<DModal d={modal==="add"?null:modal} save={saveD} close={()=>setModal(null)} toast={toast}/>}
+    {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
+  </div>;
+}
+
+/* ═══ ROTAS FIXAS ═══ */
+function RotasFixas({vehicles,drivers,rotas,setRotas,trips,setTrips,setVehicles,toast}){
+  const[show,setShow]=useState(false);
+  const[editando,setEditando]=useState(null);
+  const[cfm,setCfm]=useState(null);
+  const blank={nome:"",placa:"",mot:"",dest:"",sec:"",fin:"Transporte Escolar",diasSemana:[],ativo:true,obs:""};
+  const[f,setF]=useState(blank);
+  const u=k=>v=>setF(p=>({...p,[k]:v}));
+  const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+  const salvar=()=>{
+    if(!f.nome||!f.placa||!f.mot||!f.dest){toast("Preencha nome, veículo, motorista e destino.","danger");return;}
+    if(editando){
+      setRotas(p=>p.map(r=>r.id===editando?{...r,...f}:r));
+      toast("✓ Rota atualizada com sucesso!");
+    } else {
+      const id=`RTA-${Date.now().toString().slice(-8)}`;
+      setRotas(p=>[{...f,id,criado:new Date().toLocaleDateString("pt-BR")},...p]);
+      toast("✓ Rota fixa cadastrada!");
+    }
+    setF(blank);setEditando(null);setShow(false);
+  };
+
+  const editar=r=>{setF({nome:r.nome,placa:r.placa,mot:r.mot,dest:r.dest,sec:r.sec||"",fin:r.fin||"Transporte Escolar",diasSemana:r.diasSemana||[],ativo:r.ativo,obs:r.obs||""});setEditando(r.id);setShow(true);};
+
+  const excluir=r=>setCfm({msg:`Excluir rota "${r.nome}"? Esta ação não pode ser desfeita.`,ok:()=>{setRotas(p=>p.filter(x=>x.id!==r.id));toast("Rota excluída.","danger");setCfm(null);}});
+
+  const toggleAtivo=r=>{
+    setRotas(p=>p.map(x=>x.id===r.id?{...x,ativo:!x.ativo}:x));
+    toast(r.ativo?"Rota desativada.":"Rota ativada.","info");
+  };
+
+  // Registra saída da rota como viagem normal
+  const iniciarRota=r=>{
+    const vv=vehicles.find(v=>v.placa===r.placa);
+    if(!vv){toast("Veículo não encontrado.","danger");return;}
+    if(vv.sit!=="Disponível"){toast(`${r.placa} não está disponível — situação atual: ${vv.sit}.`,"danger");return;}
+    const id=`VGM-${Date.now().toString().slice(-8)}`;
+    const now=new Date();
+    const ts=`${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+    setTrips(p=>[{id,placa:r.placa,mod:vv?.modelo||"",mot:r.mot,dest:r.dest,kmi:vv.km||null,kmf:null,saida:ts,ret:null,fin:r.fin||"Rota Fixa",sec:r.sec||"—",sit:"Em andamento",rotaId:r.id,rotaNome:r.nome},...p]);
+    setVehicles(p=>p.map(v=>v.placa===r.placa?{...v,sit:"Em uso",mot:r.mot}:v));
+    toast(`✓ Rota "${r.nome}" iniciada! ${r.placa} marcado como Em uso.`);
+  };
+
+  const ativas=rotas.filter(r=>r.ativo);
+  const inativas=rotas.filter(r=>!r.ativo);
+
+  return<div>
+    <SH title="Rotas Fixas" sub={`${rotas.length} rota(s) cadastrada(s) — ${ativas.length} ativa(s)`} action={<Btn Ic={Plus} click={()=>{setF(blank);setEditando(null);setShow(true);}}>+ Cadastrar Rota</Btn>}/>
+
+    {show&&<div style={{background:"var(--card)",border:`1px solid ${editando?"#d97706":"var(--bd)"}`,borderTop:`3px solid ${editando?"#d97706":P}`,padding:18,marginBottom:14}} className="fu">
+      <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",margin:"0 0 14px",paddingBottom:10,borderBottom:"1px solid var(--bd)"}}>{editando?"✏ Editando Rota":"Cadastrar Nova Rota Fixa"}</p>
+      <div className="gf3">
+        <FF lb="Nome da Rota" val={f.nome} set={u("nome")} req/>
+        <FF lb="Veículo (Placa)" val={f.placa} set={u("placa")} opts={vehicles.filter(v=>v.sit!=="Baixado").map(v=>`${v.placa} — ${v.modelo}`).map(s=>s.split(" — ")[0])} req/>
+        <FF lb="Motorista Fixo" val={f.mot} set={u("mot")} opts={drivers.filter(d=>d.sit==="Ativo").map(d=>d.nome)} req/>
+      </div>
+      <div className="gf3">
+        <FF lb="Destino / Rota" val={f.dest} set={u("dest")} req/>
+        <FF lb="Finalidade" val={f.fin} set={u("fin")} opts={["Transporte Escolar","Rota de Saúde","Rota Administrativa","Rota de Obras","Outros"]}/>
+        <FF lb="Secretaria" val={f.sec} set={u("sec")} opts={["Saúde","Obras","Educação","Administração","Assist. Social"]}/>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>Dias da Semana</label>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {DIAS.map((d,i)=><button key={i} onClick={()=>setF(p=>({...p,diasSemana:p.diasSemana.includes(i)?p.diasSemana.filter(x=>x!==i):[...p.diasSemana,i]}))} style={{padding:"5px 12px",border:`2px solid ${f.diasSemana.includes(i)?P:"var(--bd)"}`,background:f.diasSemana.includes(i)?P:"none",color:f.diasSemana.includes(i)?"white":"var(--sub)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{d}</button>)}
+        </div>
+      </div>
+      <div style={{marginBottom:14}}><FF lb="Observações" val={f.obs} set={u("obs")}/></div>
+      <div style={{display:"flex",gap:10}}>
+        <Btn Ic={Save} click={salvar}>{editando?"Salvar Alterações":"Cadastrar Rota"}</Btn>
+        <Btn ghost click={()=>{setShow(false);setEditando(null);setF(blank);}}>Cancelar</Btn>
+      </div>
+    </div>}
+
+    {rotas.length===0
+      ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><RefreshCw size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhuma rota cadastrada</div><div style={{fontSize:13}}>Cadastre rotas fixas como linhas escolares, rotas de saúde e trajetos permanentes.</div></div>
+      :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {ativas.length>0&&<p style={{fontSize:11,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",margin:"4px 0"}}>Rotas Ativas ({ativas.length})</p>}
+        {ativas.map(r=><div key={r.id} style={{background:"var(--card)",border:"1px solid var(--bd)",borderLeft:`4px solid ${P}`,padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
+          <div style={{flex:1,minWidth:200}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+              <span style={{fontSize:14,fontWeight:800,color:"var(--tx)"}}>{r.nome}</span>
+              <Bdg lb="Ativa" tp="ok"/>
+              {r.diasSemana?.length>0&&<span style={{fontSize:11,color:"var(--mu)"}}>{r.diasSemana.map(d=>DIAS[d]).join(", ")}</span>}
+            </div>
+            <div style={{display:"flex",gap:16,flexWrap:"wrap",fontSize:12,color:"var(--mu)"}}>
+              <span>🚌 <strong style={{color:"var(--tx)"}}>{r.placa}</strong></span>
+              <span>👤 <strong style={{color:"var(--tx)"}}>{r.mot}</strong></span>
+              <span>📍 {r.dest}</span>
+              {r.sec&&<span>🏛 {r.sec}</span>}
+            </div>
+            {r.obs&&<div style={{fontSize:11,color:"var(--mu)",marginTop:4}}>{r.obs}</div>}
+          </div>
+          <div style={{display:"flex",gap:6,flexShrink:0,flexWrap:"wrap"}}>
+            <Btn click={()=>iniciarRota(r)}>▶ Iniciar Rota</Btn>
+            <button onClick={()=>editar(r)} style={{background:"none",border:"1px solid var(--bd)",padding:"6px 10px",cursor:"pointer",fontSize:12,color:P,fontFamily:"inherit"}}><Edit size={13}/></button>
+            <button onClick={()=>toggleAtivo(r)} style={{background:"none",border:"1px solid var(--bd)",padding:"6px 10px",cursor:"pointer",fontSize:12,color:"#d97706",fontFamily:"inherit"}}>Desativar</button>
+            <button onClick={()=>excluir(r)} style={{background:"none",border:"none",padding:"6px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={14}/></button>
+          </div>
+        </div>)}
+
+        {inativas.length>0&&<>
+          <p style={{fontSize:11,fontWeight:700,color:"var(--mu)",textTransform:"uppercase",letterSpacing:".07em",margin:"8px 0 4px"}}>Rotas Inativas ({inativas.length})</p>
+          {inativas.map(r=><div key={r.id} style={{background:"var(--card)",border:"1px solid var(--bd)",borderLeft:"4px solid #94a3b8",padding:"12px 16px",display:"flex",gap:12,alignItems:"center",flexWrap:"wrap",opacity:.7}}>
+            <div style={{flex:1}}><span style={{fontSize:13,fontWeight:700,color:"var(--tx)"}}>{r.nome}</span><span style={{fontSize:12,color:"var(--mu)",marginLeft:10}}>{r.placa} · {r.mot} · {r.dest}</span></div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>editar(r)} style={{background:"none",border:"1px solid var(--bd)",padding:"5px 9px",cursor:"pointer",fontSize:11,color:P,fontFamily:"inherit"}}><Edit size={11}/></button>
+              <button onClick={()=>toggleAtivo(r)} style={{background:"none",border:"1px solid var(--bd)",padding:"5px 9px",cursor:"pointer",fontSize:11,color:"#16a34a",fontFamily:"inherit"}}>Ativar</button>
+              <button onClick={()=>excluir(r)} style={{background:"none",border:"none",padding:"5px",cursor:"pointer",color:"#dc2626"}}><Trash2 size={13}/></button>
+            </div>
+          </div>)}
+        </>}
+      </div>
+    }
     {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
   </div>;
 }
@@ -1768,21 +1888,23 @@ export default function App(){
   const[log,setLog]=useState([]);
   const[sysUsers,setSysUsers]=useState(SYS_USERS_INIT);
   const[vistorias,setVistorias]=useState([]);
+  const[rotas,setRotas]=useState([]);
 
 /* Carrega dados persistidos */
   useEffect(()=>{
     (async()=>{
       try{
-        const[v,d,t,f,m,fi,al,su,lg,us,vs]=await Promise.all([
+        const[v,d,t,f,m,fi,al,su,lg,us,vs,rt]=await Promise.all([
           Store.get("sga_v"),Store.get("sga_d"),Store.get("sga_t"),Store.get("sga_f"),
           Store.get("sga_m"),Store.get("sga_fi"),Store.get("sga_al"),Store.get("sga_su"),
-          Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),
+          Store.get("sga_log"),Store.get("sga_users"),Store.get("sga_vistorias"),Store.get("sga_rotas"),
         ]);
         if(v)setVehicles(v);if(d)setDrivers(d);if(t)setTrips(t);
         if(f)setFuel(f);if(m)setMaint(m);if(fi)setFines(fi);
         if(al)setAlerts(al);if(su)setSuppliers(su);if(lg)setLog(lg);
         if(us&&us.length)setSysUsers(us);
         if(vs)setVistorias(vs);
+        if(rt)setRotas(rt);
       }catch{}
       setReady(true);
     })();
@@ -1800,6 +1922,7 @@ export default function App(){
   useEffect(()=>{if(ready)Store.set("sga_log",log);},[log,ready]);
   useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
   useEffect(()=>{if(ready)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
+  useEffect(()=>{if(ready)Store.set("sga_rotas",rotas);},[rotas,ready]);
 
 /* ═══ ALERTAS AUTOMÁTICOS — roda ao carregar e quando veículos/motoristas mudam ═══ */
   useEffect(()=>{
@@ -1914,6 +2037,7 @@ export default function App(){
     dashboard:<Dashboard nav={goPage} vehicles={vehicles} drivers={drivers} alerts={alerts} fuel={fuel} maint={maint} trips={trips} setTrips={setTrips} setVehicles={setVehicles}/>,
     vehicles:<Vehicles vehicles={vehicles} setVehicles={setVehicles} toast={toast}/>,
     drivers:<Drivers drivers={drivers} setDrivers={setDrivers} toast={toast}/>,
+    rotas:<RotasFixas vehicles={vehicles} drivers={drivers} rotas={rotas} setRotas={setRotas} trips={trips} setTrips={setTrips} setVehicles={setVehicles} toast={toast}/>,
     trips:<Trips vehicles={vehicles} setVehicles={setVehicles} drivers={drivers} trips={trips} setTrips={setTrips} toast={toast}/>,
     checklist:<Checklist vehicles={vehicles} setVehicles={setVehicles} drivers={drivers} vistorias={vistorias} setVistorias={setVistorias} toast={toast}/>,
     fuel:<FuelPage vehicles={vehicles} drivers={drivers} fuel={fuel} setFuel={setFuel} toast={toast}/>,

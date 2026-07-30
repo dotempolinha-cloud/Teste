@@ -3,7 +3,7 @@
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, writeBatch, onSnapshot, collection } from "firebase/firestore";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,

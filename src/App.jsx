@@ -106,56 +106,27 @@ html,body{width:100%;height:100%;min-height:100vh;overflow-x:hidden;background:#
 }
 `;
 
-/* ═══ STORE — Firestore com documentos individuais (sem conflito entre dispositivos) ═══ */
-
-/* Salva um array inteiro como documentos individuais na coleção */
-async function storeSet(colecao, array){
-  if(!Array.isArray(array))return;
-  try{
-    // Salva em lotes de 500 (limite do Firestore)
-    const chunks=[];
-    for(let i=0;i<array.length;i+=400)chunks.push(array.slice(i,i+400));
-    for(const chunk of chunks){
-      const batch=writeBatch(db);
-      chunk.forEach(item=>{
-        if(!item?.id)return;
-        batch.set(doc(db,colecao,String(item.id)),{...item,_ts:new Date().toISOString()});
-      });
-      await batch.commit();
-    }
-  }catch(e){console.error("storeSet erro:",colecao,e);}
-}
-
-/* Remove documentos que não existem mais no array local */
-async function storeSync(colecao, array){
-  await storeSet(colecao,array);
-}
-
-/* Escuta coleção em tempo real — retorna unsub */
-function storeListen(colecao, setter){
-  return onSnapshot(
-    collection(db,colecao),
-    (snap)=>{
-      const items=snap.docs.map(d=>{const data=d.data();delete data._ts;return data;});
-      if(items.length>0)setter(items);
-    },
-    (e)=>console.error("storeListen erro:",colecao,e)
-  );
-}
-
-/* Para coleções simples (usuários, config) que são um único documento */
-const Store={
+/* ═══ STORAGE — Firebase Firestore ═══ */
+const Store = {
   async get(key){
     try{
       const snap=await getDoc(doc(db,"storage",key));
       if(!snap.exists())return null;
       return snap.data().value;
-    }catch(e){return null;}
+    }catch(e){
+      console.error("Store.get erro:",key,e);
+      return null;
+    }
   },
   async set(key,value){
     try{
-      await setDoc(doc(db,"storage",key),{value,updatedAt:new Date().toISOString()});
-    }catch(e){console.error("Store.set erro:",key,e);}
+      await setDoc(doc(db,"storage",key),{
+        value:value,
+        updatedAt:new Date().toISOString(),
+      });
+    }catch(e){
+      console.error("Store.set erro:",key,e);
+    }
   },
 };
 

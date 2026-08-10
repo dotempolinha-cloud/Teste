@@ -1150,7 +1150,7 @@ function Reports({toast,vehicles,drivers,trips,fuel,maint,fines,vistorias=[],rot
   const gerarPDF=(tipo)=>{
     const data=new Date().toLocaleDateString("pt-BR");
     const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-    let corpo="";
+    
     let corpo="";
     if(tipo==="Relatório Supremo"){
       const totalC=fuel.reduce((a,x)=>a+x.total,0);

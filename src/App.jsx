@@ -1143,7 +1143,7 @@ function Financial({vehicles,fuel,maint,toast}){
 }
 
 /* ═══ REPORTS ═══ */
-function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
+function Reports({toast,vehicles,drivers,trips,fuel,maint,fines,vistorias=[],rotas=[]}){
   const[periodo,setPeriodo]=useState("Atual");
   const[sec,setSec]=useState("Todas");
 
@@ -1151,6 +1151,68 @@ function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
     const data=new Date().toLocaleDateString("pt-BR");
     const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
     let corpo="";
+    let corpo="";
+    if(tipo==="Relatório Supremo"){
+      const totalC=fuel.reduce((a,x)=>a+x.total,0);
+      const totalM=maint.reduce((a,x)=>a+x.custo,0);
+      const multasPend=fines.filter(x=>x.status==="Pendente").reduce((a,x)=>a+x.valor,0);
+      const kmTotal=trips.filter(t=>t.kmRodado>0).reduce((a,t)=>a+t.kmRodado,0);
+      corpo=`
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin-bottom:16px">1. Resumo Executivo</h2>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          ${[["Total de Veículos",vehicles.length,"#1d4ed8"],["Disponíveis",vehicles.filter(v=>v.sit==="Disponível").length,"#16a34a"],["Em Manutenção",vehicles.filter(v=>v.sit==="Manutenção").length,"#d97706"],["Motoristas Ativos",drivers.filter(d=>d.sit==="Ativo").length,"#0284c7"]].map(([l,n,c])=>`<div style="border:1px solid #e2e8f0;padding:12px;text-align:center"><div style="font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px">${l}</div><div style="font-size:24px;font-weight:800;color:${c}">${n}</div></div>`).join("")}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+          ${[["Total Viagens",trips.length,"#1d4ed8"],["KM Rodados",kmTotal>0?kmTotal.toLocaleString("pt-BR")+" km":"—","#16a34a"],["Gasto Combustível","R$ "+totalC.toLocaleString("pt-BR",{minimumFractionDigits:2}),"#d97706"],["Gasto Manutenção","R$ "+totalM.toLocaleString("pt-BR",{minimumFractionDigits:2}),"#dc2626"]].map(([l,n,c])=>`<div style="border:1px solid #e2e8f0;padding:12px;text-align:center"><div style="font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px">${l}</div><div style="font-size:20px;font-weight:800;color:${c}">${n}</div></div>`).join("")}
+        </div>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin-bottom:12px">2. Frota Completa (${vehicles.length} veículos)</h2>
+        <table><thead><tr><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Secretaria</th><th>KM</th><th>Conservação</th><th>Revisão</th><th>Seguro</th><th>Situação</th></tr></thead><tbody>
+        ${vehicles.map(v=>`<tr><td><b>${v.placa}</b></td><td>${v.marca} ${v.modelo}</td><td>${v.tipo}</td><td>${v.sec}</td><td>${v.km>0?v.km.toLocaleString("pt-BR")+" km":"Hor."}</td><td>${v.estadoCons||"—"}</td><td>${v.rev||"—"}</td><td>${v.seg||"—"}</td><td>${v.sit}</td></tr>`).join("")}
+        </tbody></table>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">3. Motoristas (${drivers.length} cadastrados)</h2>
+        <table><thead><tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Secretaria</th><th>Cat. CNH</th><th>Validade CNH</th><th>Situação</th><th>Viagens</th></tr></thead><tbody>
+        ${drivers.map(d=>`<tr><td>${d.mat||"—"}</td><td><b>${d.nome}</b></td><td>${d.cargo}</td><td>${d.sec}</td><td>Cat. ${d.cnh}</td><td>${d.valCnh||"—"}</td><td>${d.sit}</td><td>${d.viagens||0}</td></tr>`).join("")}
+        </tbody></table>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">4. Viagens (${trips.length} registros)</h2>
+        <table><thead><tr><th>Código</th><th>Veículo</th><th>Motorista</th><th>Destino</th><th>Saída</th><th>Retorno</th><th>KM Rodado</th><th>Situação</th></tr></thead><tbody>
+        ${trips.map(t=>`<tr><td>${t.id}</td><td>${t.placa}</td><td>${t.mot}</td><td>${t.dest}</td><td>${t.saida}</td><td>${t.ret||"—"}</td><td>${t.kmRodado?t.kmRodado.toLocaleString("pt-BR")+" km":"—"}</td><td>${t.sit}</td></tr>`).join("")}
+        </tbody></table>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">5. Abastecimentos (${fuel.length} registros)</h2>
+        <table><thead><tr><th>Código</th><th>Placa</th><th>Motorista</th><th>Data</th><th>Tipo</th><th>Litros</th><th>Total R$</th></tr></thead><tbody>
+        ${fuel.map(f=>`<tr><td>${f.id}</td><td>${f.placa}</td><td>${f.mot||"—"}</td><td>${f.data}</td><td>${f.tipo}</td><td>${f.litros.toFixed(1)} L</td><td><b>R$ ${f.total.toFixed(2)}</b></td></tr>`).join("")}
+        </tbody></table><p class="total">Total: ${fuel.reduce((a,x)=>a+x.litros,0).toFixed(1)} litros — R$ ${totalC.toFixed(2)}</p>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">6. Manutenções (${maint.length} ordens)</h2>
+        <table><thead><tr><th>OS</th><th>Veículo</th><th>Tipo</th><th>Descrição</th><th>Oficina</th><th>Custo</th><th>Status</th></tr></thead><tbody>
+        ${maint.map(m=>`<tr><td>${m.id}</td><td>${m.placa}</td><td>${m.tipo}</td><td>${m.desc}</td><td>${m.oficina||"—"}</td><td><b>R$ ${m.custo.toFixed(2)}</b></td><td>${m.status}</td></tr>`).join("")}
+        </tbody></table><p class="total">Total: R$ ${totalM.toFixed(2)}</p>
+
+        <h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">7. Multas (${fines.length} registros)</h2>
+        <table><thead><tr><th>Código</th><th>Veículo</th><th>Data</th><th>Infração</th><th>Valor</th><th>Status</th></tr></thead><tbody>
+        ${fines.map(m=>`<tr><td>${m.id}</td><td>${m.placa}</td><td>${m.data}</td><td>${m.inf}</td><td><b>R$ ${m.valor.toFixed(2)}</b></td><td>${m.status}</td></tr>`).join("")}
+        </tbody></table><p class="total">Multas pendentes: R$ ${multasPend.toFixed(2)}</p>
+
+        ${vistorias.length>0?`<h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">8. Vistorias (${vistorias.length} registros)</h2>
+        <table><thead><tr><th>Código</th><th>Veículo</th><th>Motorista</th><th>Data</th><th>Conservação</th><th>Itens</th><th>Resultado</th></tr></thead><tbody>
+        ${vistorias.map(v=>`<tr><td>${v.id}</td><td>${v.placa}</td><td>${v.mot}</td><td>${v.data}</td><td>${v.estadoCons||"—"}</td><td>${v.ok}/${v.total}</td><td>${v.res}</td></tr>`).join("")}
+        </tbody></table>`:""}
+
+        ${rotas.length>0?`<h2 style="color:#0c1a47;border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin:20px 0 12px">9. Rotas Fixas (${rotas.length} cadastradas)</h2>
+        <table><thead><tr><th>Nome</th><th>Veículo</th><th>Motorista</th><th>Destino</th><th>Dias</th><th>Status</th></tr></thead><tbody>
+        ${rotas.map(r=>`<tr><td><b>${r.nome}</b></td><td>${r.placa||"—"}</td><td>${r.mot}</td><td>${r.dest}</td><td>${(r.diasSemana||[]).map(d=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d]).join(", ")||"—"}</td><td>${r.ativo?"Ativa":"Inativa"}</td></tr>`).join("")}
+        </tbody></table>`:""}
+
+        <div style="margin-top:24px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;text-align:center">
+          Relatório Supremo gerado em ${data} às ${hora} — SGA Frota Municipal — Prefeitura de Upanema — RN<br/>
+          Total geral de gastos: <b style="color:#0c1a47">R$ ${(totalC+totalM).toLocaleString("pt-BR",{minimumFractionDigits:2})}</b> · 
+          Frota: <b>${vehicles.length} veículos</b> · Motoristas: <b>${drivers.length}</b> · Viagens: <b>${trips.length}</b>
+        </div>
+      `;
+    } else
     if(tipo==="Frota Completa"){
       const lista=vehicles.filter(v=>sec==="Todas"||v.sec===sec);
       corpo=`<table><thead><tr><th>Placa</th><th>Modelo</th><th>Secretaria</th><th>Tipo</th><th>KM</th><th>Combustível</th><th>Revisão</th><th>Seguro</th><th>Situação</th></tr></thead><tbody>
@@ -1242,6 +1304,7 @@ function Reports({toast,vehicles,drivers,trips,fuel,maint,fines}){
   };
 
   const rpts=[
+    {t:"Relatório Geral",d:"Relatório completo: frota, motoristas, viagens, combustível, manutenções, multas, vistorias e rotas — tudo em um só documento",I:Shield},
     {t:"Frota Completa",d:"Situação, KM e custos de todos os veículos",I:Car},
     {t:"Histórico de Viagens",d:"Viagens do período com destinos e custos",I:MapPin},
     {t:"Consumo de Combustível",d:"Análise de consumo e gastos por veículo",I:Fuel},
@@ -2015,7 +2078,7 @@ export default function App(){
     maintenance:<MaintenancePage vehicles={vehicles} setVehicles={setVehicles} maint={maint} setMaint={setMaint} toast={toast}/>,
     fines:<Fines vehicles={vehicles} fines={fines} setFines={setFines} toast={toast}/>,
     financial:<Financial vehicles={vehicles} fuel={fuel} maint={maint} toast={toast}/>,
-    reports:<Reports toast={toast} vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel} maint={maint} fines={fines}/>,
+    reports:<Reports toast={toast} vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel} maint={maint} fines={fines} vistorias={vistorias} rotas={rotas}/>,
     suppliers:<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} toast={toast}/>,
     alerts:<AlertsPage alerts={alerts} setAlerts={setAlerts} nav={goPage}/>,
     audit:<Audit log={log}/>,

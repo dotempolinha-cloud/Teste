@@ -2107,7 +2107,20 @@ export default function App(){
     });
   },[ready,vehicles,drivers,maint,fines,vistorias]);
 
-  const goPage=p=>{setPage(p);setSideOpen(false);setNotif(false);};
+  const goPage=p=>{
+    setPage(p);setSideOpen(false);setNotif(false);
+    window.history.pushState({page:p},"",'#'+p);
+  };
+
+  // Intercepta o botão "voltar" do navegador
+  useEffect(()=>{
+    const handler=e=>{
+      const p=e.state?.page||"dashboard";
+      setPage(p);setSideOpen(false);setNotif(false);
+    };
+    window.addEventListener("popstate",handler);
+    return()=>window.removeEventListener("popstate",handler);
+  },[]);
 
   const handleLogin=u=>{
     setCurrentUser(u);setLogged(true);

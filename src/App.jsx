@@ -1994,19 +1994,19 @@ export default function App(){
     })();
   },[]);
 
-  /* Salva automaticamente */
-  useEffect(()=>{if(ready)Store.set("sga_v",vehicles);},[vehicles,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_d",drivers);},[drivers,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_t",trips);},[trips,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_f",fuel);},[fuel,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_m",maint);},[maint,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_fi",fines);},[fines,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_al",alerts);},[alerts,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_su",suppliers);},[suppliers,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_log",log);},[log,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
-  useEffect(()=>{if(ready)Store.set("sga_rotas",rotas);},[rotas,ready]);
+/* Salva automaticamente — só salva se tiver dados reais (evita sobrescrever com array vazio) */
+  useEffect(()=>{if(ready&&vehicles.length>0)Store.set("sga_v",vehicles);},[vehicles,ready]);
+  useEffect(()=>{if(ready&&drivers.length>0)Store.set("sga_d",drivers);},[drivers,ready]);
+  useEffect(()=>{if(ready&&trips.length>0)Store.set("sga_t",trips);},[trips,ready]);
+  useEffect(()=>{if(ready&&fuel.length>0)Store.set("sga_f",fuel);},[fuel,ready]);
+  useEffect(()=>{if(ready&&maint.length>0)Store.set("sga_m",maint);},[maint,ready]);
+  useEffect(()=>{if(ready&&fines.length>0)Store.set("sga_fi",fines);},[fines,ready]);
+  useEffect(()=>{if(ready&&alerts.length>0)Store.set("sga_al",alerts);},[alerts,ready]);
+  useEffect(()=>{if(ready&&suppliers.length>0)Store.set("sga_su",suppliers);},[suppliers,ready]);
+  useEffect(()=>{if(ready&&log.length>0)Store.set("sga_log",log);},[log,ready]);
+  useEffect(()=>{if(ready&&sysUsers.length>0)Store.set("sga_users",sysUsers);},[sysUsers,ready]);
+  useEffect(()=>{if(ready&&vistorias.length>0)Store.set("sga_vistorias",vistorias);},[vistorias,ready]);
+  useEffect(()=>{if(ready&&rotas.length>0)Store.set("sga_rotas",rotas);},[rotas,ready]);
 
 /* ═══ ALERTAS AUTOMÁTICOS — roda ao carregar e quando veículos/motoristas mudam ═══ */
   useEffect(()=>{

@@ -2,8 +2,9 @@
     Prefeitura de Upanema — RN  |  Versão de Produção
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import { doc, getDoc, setDoc, writeBatch, onSnapshot, collection } from "firebase/firestore";
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updatePassword } from "firebase/auth";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -175,9 +176,9 @@ async function uploadSupabase(base64){
   }
 }
 
-/* ═══ USUÁRIO ÚNICO INICIAL — Administrador Geral ═══ */
+/* ═══ USUÁRIO INICIAL — sem senhas no código ═══ */
 const SYS_USERS_INIT=[
-  {email:"gestão@gmail.com",pw:"gestão",nome:"Administrador Geral",role:"admin",perfil:"Administrador Geral",sec:"Gestão Municipal",mat:"PMU-ADMIN",ativo:true},
+  {email:"gestão@gmail.com",nome:"Administrador Geral",role:"admin",perfil:"Administrador Geral",sec:"Gestão Municipal",mat:"PMU-ADMIN",ativo:true},
 ];
 
 const ROLE_PAGES={
@@ -466,19 +467,49 @@ function DModal({d,save,close,toast}){
 
 /* ═══ LOGIN ═══ */
 function Login({onLogin,sysUsers}){
-  const[id,setId]=useState("");const[pw,setPw]=useState("");
-  const[showPw,setShowPw]=useState(false);const[err,setErr]=useState("");const[loading,setLoading]=useState(false);
-  const[step,setStep]=useState("in");const[fEmail,setFEmail]=useState("");const[fSent,setFSent]=useState(false);
-  const go=()=>{
+  const[id,setId]=useState("");
+  const[pw,setPw]=useState("");
+  const[showPw,setShowPw]=useState(false);
+  const[err,setErr]=useState("");
+  const[loading,setLoading]=useState(false);
+  const[step,setStep]=useState("in");
+  const[fEmail,setFEmail]=useState("");
+  const[fSent,setFSent]=useState(false);
+
+  const go=async()=>{
     if(!id||!pw){setErr("Preencha e-mail e senha.");return;}
     setLoading(true);setErr("");
-    setTimeout(()=>{
-      const u=sysUsers.find(x=>x.email.toLowerCase()===id.toLowerCase()&&x.pw===pw);
-      if(u){if(!u.ativo){setErr("Conta inativa. Contate o administrador.");setLoading(false);return;}onLogin(u);}
-      else setErr("E-mail ou senha incorretos.");
-      setLoading(false);
-    },700);
+    try{
+      // Autentica no Firebase Auth
+      await signInWithEmailAndPassword(auth,id,pw);
+      // Busca perfil do usuário na lista do sistema
+      const perfil=sysUsers.find(u=>u.email.toLowerCase()===id.toLowerCase());
+      if(!perfil){await signOut(auth);setErr("Usuário não encontrado no sistema.");setLoading(false);return;}
+      if(!perfil.ativo){await signOut(auth);setErr("Conta inativa. Contate o administrador.");setLoading(false);return;}
+      onLogin(perfil);
+    }catch(e){
+      const msgs={
+        "auth/invalid-credential":"E-mail ou senha incorretos.",
+        "auth/user-not-found":"E-mail não cadastrado.",
+        "auth/wrong-password":"Senha incorreta.",
+        "auth/invalid-email":"E-mail inválido.",
+        "auth/too-many-requests":"Muitas tentativas. Aguarde alguns minutos.",
+        "auth/network-request-failed":"Erro de conexão. Verifique a internet.",
+      };
+      setErr(msgs[e.code]||"Erro ao entrar. Tente novamente.");
+    }
+    setLoading(false);
   };
+
+  const recuperar=async()=>{
+    if(!fEmail){setErr("Digite seu e-mail.");return;}
+    try{
+      const{sendPasswordResetEmail}=await import("firebase/auth");
+      await sendPasswordResetEmail(auth,fEmail);
+      setFSent(true);
+    }catch{setErr("Não foi possível enviar o e-mail. Verifique o endereço.");}
+  };
+
   const inp={width:"100%",border:"1px solid #d1d5db",padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box"};
   return<div style={{width:"100vw",minHeight:"100vh",background:"linear-gradient(140deg,#0c1a47 0%,#1d4ed8 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
     <div style={{display:"flex",width:"100%",maxWidth:880,background:"white",boxShadow:"0 28px 80px rgba(0,0,0,.4)",flexWrap:"wrap"}}>
@@ -502,23 +533,24 @@ function Login({onLogin,sysUsers}){
           <>
             <div style={{marginBottom:24}}><h2 style={{fontSize:20,fontWeight:800,color:"#0f172a",margin:"0 0 4px"}}>Acesso ao Sistema</h2><p style={{fontSize:13,color:"#64748b",margin:0}}>Use suas credenciais institucionais</p></div>
             <div style={{display:"flex",flexDirection:"column",gap:13}}>
-              <div><label style={{display:"block",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>E-mail</label><input value={id} onChange={e=>setId(e.target.value)} placeholder="seu@email.com" style={inp}/></div>
+              <div><label style={{display:"block",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>E-mail</label><input value={id} onChange={e=>setId(e.target.value)} placeholder="seu@email.com" style={inp} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
               <div><label style={{display:"block",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Senha</label>
                 <div style={{position:"relative"}}><input type={showPw?"text":"password"} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="••••••••" style={{...inp,paddingRight:38}}/><button onClick={()=>setShowPw(!showPw)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#64748b"}}>{showPw?<EyeOff size={16}/>:<Eye size={16}/>}</button></div>
               </div>
               {err&&<div style={{background:"#fee2e2",border:"1px solid #fca5a5",color:"#dc2626",padding:"9px 12px",fontSize:13,display:"flex",alignItems:"center",gap:8}}><AlertCircle size={14}/>{err}</div>}
               <button onClick={go} disabled={loading} style={{background:loading?"#94a3b8":"#0c1a47",color:"white",border:"none",padding:"12px",fontSize:13,fontWeight:700,cursor:loading?"not-allowed":"pointer",textTransform:"uppercase",letterSpacing:".08em",fontFamily:"inherit"}}>{loading?"Verificando...":"Entrar no Sistema"}</button>
-              <button onClick={()=>setStep("forgot")} style={{background:"none",border:"none",fontSize:12,color:P,cursor:"pointer",textAlign:"left",fontFamily:"inherit",padding:0}}>Esqueceu a senha?</button>
+              <button onClick={()=>{setStep("forgot");setErr("");}} style={{background:"none",border:"none",fontSize:12,color:P,cursor:"pointer",textAlign:"left",fontFamily:"inherit",padding:0}}>Esqueceu a senha?</button>
             </div>
           </>
         ):(
           <>
-            <button onClick={()=>{setStep("in");setFSent(false);}} style={{background:"none",border:"none",fontSize:12,color:P,cursor:"pointer",textAlign:"left",fontFamily:"inherit",marginBottom:20,padding:0}}>← Voltar ao login</button>
+            <button onClick={()=>{setStep("in");setFSent(false);setErr("");}} style={{background:"none",border:"none",fontSize:12,color:P,cursor:"pointer",textAlign:"left",fontFamily:"inherit",marginBottom:20,padding:0}}>← Voltar ao login</button>
             <h2 style={{fontSize:20,fontWeight:800,color:"#0f172a",margin:"0 0 8px"}}>Recuperar Senha</h2>
             <p style={{fontSize:13,color:"#64748b",marginBottom:20}}>Informe seu e-mail para receber instruções de redefinição.</p>
+            {err&&<div style={{background:"#fee2e2",border:"1px solid #fca5a5",color:"#dc2626",padding:"9px 12px",fontSize:13,marginBottom:12,display:"flex",gap:8}}><AlertCircle size={14}/>{err}</div>}
             {!fSent
-              ?<><input value={fEmail} onChange={e=>setFEmail(e.target.value)} placeholder="seu@email.com" style={{...inp,marginBottom:12}}/><button onClick={()=>setTimeout(()=>setFSent(true),700)} style={{background:"#0c1a47",color:"white",border:"none",padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",width:"100%",fontFamily:"inherit"}}>Enviar Instruções</button></>
-              :<div style={{background:"#dcfce7",border:"1px solid #86efac",padding:"16px",color:"#15803d",fontSize:13}}><strong>✓ E-mail enviado!</strong> Verifique sua caixa de entrada.</div>
+              ?<><input value={fEmail} onChange={e=>setFEmail(e.target.value)} placeholder="seu@email.com" style={{...inp,marginBottom:12}}/><button onClick={recuperar} style={{background:"#0c1a47",color:"white",border:"none",padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",width:"100%",fontFamily:"inherit"}}>Enviar Instruções</button></>
+              :<div style={{background:"#dcfce7",border:"1px solid #86efac",padding:"16px",color:"#15803d",fontSize:13}}><strong>✓ E-mail enviado!</strong> Verifique sua caixa de entrada para redefinir a senha.</div>
             }
           </>
         )}
@@ -2122,6 +2154,24 @@ export default function App(){
     return()=>window.removeEventListener("popstate",handler);
   },[]);
 
+  // Escuta estado de autenticação do Firebase
+  useEffect(()=>{
+    const unsub=onAuthStateChanged(auth,(firebaseUser)=>{
+      if(firebaseUser){
+        // Busca perfil do usuário
+        Store.get("sga_users").then(users=>{
+          const lista=users||SYS_USERS_INIT;
+          const perfil=lista.find(u=>u.email.toLowerCase()===firebaseUser.email.toLowerCase());
+          if(perfil&&perfil.ativo){setCurrentUser(perfil);setLogged(true);}
+          else{signOut(auth);}
+        });
+      } else {
+        setLogged(false);setCurrentUser(null);setPage("dashboard");
+      }
+    });
+    return()=>unsub();
+  },[]);
+
   const handleLogin=u=>{
     setCurrentUser(u);setLogged(true);
     const now=new Date();
@@ -2159,7 +2209,7 @@ export default function App(){
     <div className="sga-wrap">
       <Sidebar page={safePage} setPage={goPage} currentUser={currentUser} sideOpen={sideOpen}/>
       <div className="sga-mn">
-        <Header page={safePage} logout={()=>{setLogged(false);setCurrentUser(null);setPage("dashboard");}} dm={dm} setDm={setDm} notif={notif} setNotif={setNotif} onMenu={()=>setSideOpen(s=>!s)} alerts={alerts}/>
+        <Header page={safePage} logout={()=>{signOut(auth);setLogged(false);setCurrentUser(null);setPage("dashboard");}} dm={dm} setDm={setDm} notif={notif} setNotif={setNotif} onMenu={()=>setSideOpen(s=>!s)} alerts={alerts}/>
         {notif&&<NotifPanel close={()=>setNotif(false)} nav={goPage} alerts={alerts}/>}
         {!ready&&<div style={{position:"fixed",inset:0,background:"rgba(255,255,255,.9)",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}>
           <div className="spin" style={{width:32,height:32,border:"3px solid var(--bd)",borderTopColor:P,borderRadius:"50%"}}/>

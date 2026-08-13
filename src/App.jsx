@@ -2172,6 +2172,31 @@ export default function App(){
     return()=>unsub();
   },[]);
 
+  // Escuta estado de autenticação do Firebase
+  useEffect(()=>{
+    const unsub=onAuthStateChanged(auth,(firebaseUser)=>{
+      if(firebaseUser){
+        Store.get("sga_users").then(users=>{
+          const lista=(users&&users.length)?users:SYS_USERS_INIT;
+          const perfil=lista.find(u=>u.email.toLowerCase()===firebaseUser.email.toLowerCase());
+          if(perfil&&perfil.ativo){
+            setCurrentUser(perfil);
+            setLogged(true);
+          } else {
+            signOut(auth);
+            setLogged(false);
+            setCurrentUser(null);
+          }
+        });
+      } else {
+        setLogged(false);
+        setCurrentUser(null);
+        setPage("dashboard");
+      }
+    });
+    return()=>unsub();
+  },[]);
+
   const handleLogin=u=>{
     setCurrentUser(u);setLogged(true);
     const now=new Date();

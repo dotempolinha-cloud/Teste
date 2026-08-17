@@ -3,7 +3,7 @@
     ─────────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
 import { db, auth } from "./firebase";
-import { doc, getDoc, setDoc, writeBatch, onSnapshot, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc, writeBatch, onSnapshot, collection, deleteDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updatePassword } from "firebase/auth";
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
@@ -182,23 +182,23 @@ const SYS_USERS_INIT=[
 ];
 
 const ROLE_PAGES={
-  admin:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit","settings"],
-  gestor:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit"],
-  secretario:["dashboard","vehicles","trips","rotas","financial","reports","alerts"],
-  supervisor:["dashboard","vehicles","drivers","trips","rotas","checklist","maintenance","alerts"],
-  motorista:["dashboard","trips","rotas","checklist"],
+  admin:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit","rastreamento","settings"],
+  gestor:["dashboard","vehicles","drivers","trips","rotas","checklist","fuel","maintenance","fines","financial","reports","suppliers","alerts","audit","rastreamento"],
+  secretario:["dashboard","vehicles","trips","rotas","financial","reports","alerts","rastreamento"],
+  supervisor:["dashboard","vehicles","drivers","trips","rotas","checklist","maintenance","alerts","rastreamento"],
+  motorista:["dashboard","trips","rotas","checklist","rastreamento"],
   auditor:["dashboard","vehicles","drivers","financial","reports","audit"],
 };
 const ROLE_LABELS={admin:"Administrador",gestor:"Gestor da Garagem",secretario:"Secretário(a)",supervisor:"Supervisor",motorista:"Motorista",auditor:"Auditor"};
 
 const NAV_ITEMS=[
   {sec:null,items:[{id:"dashboard",lb:"Painel Geral",ic:LayoutDashboard}]},
-  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"rotas",lb:"Rotas Fixas",ic:RefreshCw},{id:"checklist",lb:"Vistoria",ic:CheckSquare}]},
+  {sec:"OPERAÇÕES",items:[{id:"vehicles",lb:"Veículos",ic:Car},{id:"drivers",lb:"Motoristas",ic:Users},{id:"trips",lb:"Viagens",ic:MapPin},{id:"rotas",lb:"Rotas Fixas",ic:RefreshCw},{id:"rastreamento",lb:"Rastreamento",ic:MapPin},{id:"checklist",lb:"Vistoria",ic:CheckSquare}]},
   {sec:"RECURSOS",items:[{id:"fuel",lb:"Abastecimento",ic:Fuel},{id:"maintenance",lb:"Manutenção",ic:Wrench},{id:"fines",lb:"Multas",ic:AlertOctagon}]},
   {sec:"GESTÃO",items:[{id:"financial",lb:"Financeiro",ic:DollarSign},{id:"reports",lb:"Relatórios",ic:FileText},{id:"suppliers",lb:"Fornecedores",ic:Building2}]},
   {sec:"SISTEMA",items:[{id:"alerts",lb:"Alertas",ic:Bell},{id:"audit",lb:"Auditoria",ic:Shield},{id:"settings",lb:"Configurações",ic:SettingsIcon}]},
 ];
-const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",rotas:"Rotas Fixas",checklist:"Vistoria Veicular",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
+const PL={dashboard:"Painel Geral",vehicles:"Veículos",drivers:"Motoristas",trips:"Viagens",rotas:"Rotas Fixas",rastreamento:"Rastreamento GPS",checklist:"Vistoria Veicular",fuel:"Abastecimento",maintenance:"Manutenção",fines:"Multas",financial:"Financeiro",reports:"Relatórios",suppliers:"Fornecedores",alerts:"Alertas",audit:"Auditoria",settings:"Configurações"};
 
 /* ═══ TOAST ═══ */
 function useToast(){const[ts,setTs]=useState([]);const add=(m,t="success")=>{const id=Date.now()+Math.random();setTs(p=>[...p,{id,m,t}]);setTimeout(()=>setTs(p=>p.filter(x=>x.id!==id)),4200);};return{ts,add};}
@@ -922,6 +922,119 @@ function RotasFixas({vehicles,drivers,rotas,setRotas,trips,setTrips,setVehicles,
       </div>
     }
     {cfm&&<Confirm msg={cfm.msg} ok={cfm.ok} cancel={()=>setCfm(null)} danger/>}
+  </div>;
+}
+
+/* ═══ RASTREAMENTO GPS ═══ */
+function Rastreamento({currentUser,trips,vehicles}){
+  const[locais,setLocais]=useState({});
+  const[compartilhando,setCompartilhando]=useState(false);
+  const[erro,setErro]=useState(null);
+  const watchRef=useRef(null);
+  const isMot=currentUser?.role==="motorista"||currentUser?.role==="supervisor";
+
+  // Motorista: compartilha localização
+  const iniciar=()=>{
+    if(!navigator.geolocation){setErro("GPS não disponível neste dispositivo.");return;}
+    setErro(null);
+    watchRef.current=navigator.geolocation.watchPosition(
+      async pos=>{
+        const loc={
+          lat:pos.coords.latitude,
+          lng:pos.coords.longitude,
+          acc:Math.round(pos.coords.accuracy),
+          ts:new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}),
+          nome:currentUser?.nome,
+          email:currentUser?.email,
+          placa:trips.find(t=>t.sit==="Em andamento"&&t.mot===currentUser?.nome)?.placa||"—",
+        };
+        try{
+          await setDoc(doc(db,"gps",currentUser.email.replace(/[^a-z0-9]/gi,"_")),loc);
+        }catch{}
+        setLocais(p=>({...p,[currentUser.email]:loc}));
+        setCompartilhando(true);
+      },
+      e=>setErro("Erro ao obter localização: "+e.message),
+      {enableHighAccuracy:true,maximumAge:10000,timeout:15000}
+    );
+  };
+
+  const parar=async()=>{
+    if(watchRef.current)navigator.geolocation.clearWatch(watchRef.current);
+    setCompartilhando(false);
+    try{await deleteDoc(doc(db,"gps",currentUser.email.replace(/[^a-z0-9]/gi,"_")));}catch{}
+  };
+
+  // Gestor/Admin: vê localização de todos
+  useEffect(()=>{
+    if(isMot)return;
+    const unsub=onSnapshot(collection(db,"gps"),snap=>{
+      const novos={};
+      snap.docs.forEach(d=>novos[d.id]=d.data());
+      setLocais(novos);
+    });
+    return()=>unsub();
+  },[isMot]);
+
+  useEffect(()=>()=>{if(watchRef.current)navigator.geolocation.clearWatch(watchRef.current);},[]);
+
+  const ativos=Object.values(locais);
+
+  return<div>
+    <SH title="Rastreamento GPS" sub="Localização em tempo real dos motoristas em campo"/>
+
+    {/* PAINEL DO MOTORISTA */}
+    {isMot&&<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:24,marginBottom:16}}>
+      <p style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginBottom:8}}>Compartilhar Minha Localização</p>
+      <p style={{fontSize:13,color:"var(--mu)",marginBottom:16,lineHeight:1.6}}>Ao ativar, sua localização GPS será enviada em tempo real para o gestor da frota. Desative ao terminar o turno.</p>
+      {erro&&<div style={{background:"#fee2e2",border:"1px solid #fca5a5",color:"#dc2626",padding:"10px 14px",marginBottom:14,fontSize:13}}>{erro}</div>}
+      {compartilhando&&locais[currentUser?.email]&&<div style={{background:"#dcfce7",border:"1px solid #86efac",padding:"10px 14px",marginBottom:14,fontSize:13,color:"#15803d"}}>
+        ✓ Localização sendo compartilhada · {locais[currentUser.email].lat?.toFixed(5)}, {locais[currentUser.email].lng?.toFixed(5)} · Precisão: {locais[currentUser.email].acc}m · {locais[currentUser.email].ts}
+      </div>}
+      <div style={{display:"flex",gap:10}}>
+        {!compartilhando
+          ?<Btn Ic={MapPin} click={iniciar}>▶ Ativar Rastreamento</Btn>
+          :<Btn bad click={parar}>■ Parar Rastreamento</Btn>
+        }
+      </div>
+    </div>}
+
+    {/* PAINEL DO GESTOR/ADMIN */}
+    {!isMot&&<div>
+      <div className="gkpi" style={{marginBottom:16}}>
+        <Kpi lb="Motoristas no Campo" vl={ativos.length} sub="Com GPS ativo agora" Ic={MapPin} cor="#16a34a" top="#16a34a"/>
+        <Kpi lb="Em Andamento" vl={trips.filter(t=>t.sit==="Em andamento").length} sub="Viagens ativas" Ic={Activity} cor="#0284c7" top="#0284c7"/>
+      </div>
+
+      {ativos.length===0
+        ?<div style={{background:"var(--card)",border:"1px solid var(--bd)",padding:"56px",textAlign:"center",color:"var(--mu)"}}><MapPin size={40} color="var(--bd)" style={{display:"block",margin:"0 auto 12px"}}/><div style={{fontSize:15,fontWeight:600,color:"var(--tx)",marginBottom:4}}>Nenhum motorista com GPS ativo</div><div style={{fontSize:13}}>Quando um motorista ativar o rastreamento no celular, a localização aparecerá aqui em tempo real.</div></div>
+        :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {ativos.map((loc,i)=>{
+            const viagem=trips.find(t=>t.sit==="Em andamento"&&t.placa===loc.placa);
+            const veiculo=vehicles.find(v=>v.placa===loc.placa);
+            return<div key={i} style={{background:"var(--card)",border:"1px solid var(--bd)",borderLeft:"4px solid #16a34a",padding:"14px 16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <span className="blink" style={{width:8,height:8,background:"#16a34a",borderRadius:"50%",display:"inline-block",flexShrink:0}}/>
+                    <span style={{fontSize:14,fontWeight:700,color:"var(--tx)"}}>{loc.nome}</span>
+                    {loc.placa&&loc.placa!=="—"&&<Bdg lb={loc.placa} tp="info"/>}
+                  </div>
+                  <div style={{fontSize:12,color:"var(--mu)",display:"flex",gap:16,flexWrap:"wrap"}}>
+                    <span>📍 {loc.lat?.toFixed(5)}, {loc.lng?.toFixed(5)}</span>
+                    <span>🎯 Precisão: {loc.acc}m</span>
+                    <span>🕐 Atualizado: {loc.ts}</span>
+                    {viagem&&<span>🗺 {viagem.dest}</span>}
+                    {veiculo&&<span>🚗 {veiculo.modelo}</span>}
+                  </div>
+                </div>
+                
+                  <a href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`} target="_blank" rel="noopener noreferrer" style={{background:P,color:"white",padding:"8px 14px",fontSize:12,fontWeight:600,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:6,flexShrink:0}}><MapPin size={13}/>Ver no Maps</a>
+              </div>
+            </div>;
+          })}
+        </div>}
+    </div>}
   </div>;
 }
 
@@ -2221,6 +2334,7 @@ export default function App(){
     alerts:<AlertsPage alerts={alerts} setAlerts={setAlerts} nav={goPage}/>,
     audit:<Audit log={log}/>,
     settings:<Settings toast={toast} currentUser={currentUser} sysUsers={sysUsers} setSysUsers={setSysUsers} vehicles={vehicles} drivers={drivers} trips={trips} fuel={fuel} maint={maint} fines={fines} suppliers={suppliers} vistorias={vistorias} setVehicles={setVehicles} setDrivers={setDrivers} setTrips={setTrips} setFuel={setFuel} setMaint={setMaint} setFines={setFines} setSuppliers={setSuppliers} setVistorias={setVistorias}/>,
+    rastreamento:<Rastreamento currentUser={currentUser} trips={trips} vehicles={vehicles}/>,
   };
 
   /* Bloqueio de acesso direto: se a página atual não é permitida ao papel, força dashboard */
